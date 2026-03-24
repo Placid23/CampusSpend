@@ -6,13 +6,14 @@ import { DashboardShell } from "@/components/layout/Shell"
 import { GlassCard } from "@/components/ui/glass-card"
 import { 
   Zap, 
-  Plus, 
   ChevronDown, 
-  Clock, 
-  Package, 
   BarChart3, 
+  Lightbulb,
+  Clock,
+  ChevronRight,
   TrendingUp,
-  Heart,
+  PieChart,
+  ShoppingBag,
   ChefHat,
   Pizza,
   BookOpen,
@@ -29,196 +30,241 @@ import {
   CartesianGrid, 
   Tooltip, 
   ResponsiveContainer,
-  Cell
+  Cell,
+  PieChart as RePieChart,
+  Pie,
+  Cell as PieCell
 } from 'recharts'
 import Image from "next/image"
 import { cn } from "@/lib/utils"
 
-const chartData = [
-  { name: 'Week 1', total: 400 },
-  { name: 'Week 2', total: 600 },
-  { name: 'Week 3', total: 500 },
-  { name: 'Week 4', total: 800 },
-  { name: 'Week 5', total: 950 },
+const donutData = [
+  { name: 'Burger', value: 33.9, color: '#ef1ab8' },
+  { name: 'Pizza', value: 26.1, color: '#bc66eb' },
+  { name: 'Books', value: 10.4, color: '#f59e0b' },
+  { name: 'Stationery', value: 13.0, color: '#10b981' },
+  { name: 'Others', value: 16.6, color: '#3b82f6' },
 ]
 
-const expenses = [
-  { day: 6, name: "Pepperoni Pizza", price: 250, image: "https://picsum.photos/seed/pizzacali/100/100", category: "Food" },
-  { day: 8, name: "Shawarma", price: 350, image: "https://picsum.photos/seed/shawa/100/100", category: "Food" },
-  { day: 13, name: "Books", price: 637, image: "https://picsum.photos/seed/bookscali/100/100", category: "Education" },
-  { day: 16, name: "Snacks", price: 100, image: "https://picsum.photos/seed/snacks/100/100", category: "Food" },
-  { day: 21, name: "Cheesy Burger", price: 225, image: "https://picsum.photos/seed/burgercali/100/100", category: "Food", favorite: true },
-  { day: 22, name: "Books", price: 637, image: "https://picsum.photos/seed/books2/100/100", category: "Education" },
-  { day: 26, name: "Checked Proo", price: 200, image: "https://picsum.photos/seed/proo/100/100", category: "Other" },
-  { day: 31, name: "Stationery", price: 150, image: "https://picsum.photos/seed/stat/100/100", category: "Stationery" },
+const weeklyChartData = [
+  { name: 'Week 1', total: 1200 },
+  { name: 'Week 2', total: 1900 },
+  { name: 'Week 3', total: 1500 },
+  { name: 'Week 4', total: 2400 },
+  { name: 'Week 5', total: 2800 },
 ]
 
-export default function CalendarPage() {
-  const days = Array.from({ length: 31 }, (_, i) => i + 1)
-  const [date] = React.useState(new Date(2024, 3, 1)) // April 2024 demo
+const recentPurchases = [
+  { name: "Cheesy Burger", time: "3 days ago", price: 225, image: "https://picsum.photos/seed/burger1/100/100" },
+  { name: "Books", time: "5 days ago", price: 637, image: "https://picsum.photos/seed/books1/100/100" },
+  { name: "Pepperoni Pizza", time: "1 week ago", price: 250, image: "https://picsum.photos/seed/pizza1/100/100" },
+]
 
+export default function SpendingSummaryPage() {
   return (
     <DashboardShell>
       <div className="space-y-8 animate-in fade-in slide-in-from-bottom duration-1000">
         
         {/* Header Section */}
         <div className="space-y-2">
-          <h1 className="text-4xl font-headline font-bold">Expense <span className="text-primary neon-text-glow">Calendar</span></h1>
-          <p className="text-muted-foreground text-sm max-w-2xl">Track your daily expenses and get insights into your spending habits for the month.</p>
+          <h1 className="text-4xl font-headline font-bold">Spending <span className="text-primary neon-text-glow">Summary</span></h1>
+          <p className="text-muted-foreground text-sm max-w-2xl">Review your monthly spending trends and budget progress for April 2024</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
-          {/* Calendar Main Grid (8 cols) */}
+          {/* Main Content (8 cols) */}
           <div className="lg:col-span-8 space-y-6">
-            <GlassCard className="p-0 border-white/10 overflow-hidden">
-              {/* Calendar Controls */}
-              <div className="flex flex-col md:flex-row items-center justify-between p-6 bg-white/5 border-b border-white/5 gap-4">
-                <div className="flex items-center gap-6">
-                  <div className="flex items-center gap-2 bg-white/5 rounded-xl px-4 py-2 border border-white/10 cursor-pointer hover:border-primary/50 transition-all">
-                    <span className="text-sm font-bold">April 2024</span>
-                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                  </div>
-                  <div className="flex items-center gap-4 text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                      <Package className="w-4 h-4 text-primary" />
-                      <span className="text-xs font-bold text-white">675</span>
+            <GlassCard className="p-8 border-white/10 space-y-8">
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                {/* Budget Progress & Donut */}
+                <div className="space-y-8">
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-headline font-bold uppercase tracking-widest text-muted-foreground/80">Your Budget Progress</h3>
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-4">
+                         <div className="h-10 px-4 rounded-xl bg-primary/20 border border-primary/30 flex items-center gap-2">
+                           <Zap className="w-4 h-4 text-primary" />
+                           <span className="text-sm font-bold text-white">5,725 Rs. Spent</span>
+                         </div>
+                         <div className="h-10 w-12 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-xs font-bold text-emerald-400">
+                           275
+                         </div>
+                      </div>
+                      <Progress value={95} className="h-2 bg-white/5 [&>div]:bg-gradient-to-r [&>div]:from-primary [&>div]:to-secondary" />
+                      <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">
+                        Over budget! Spending limit is Rs. 275 left
+                      </p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-primary" />
-                      <span className="text-xs font-bold text-primary">4220</span>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-headline font-bold uppercase tracking-widest text-muted-foreground/80">Weekly Expenses</h3>
+                    <div className="space-y-4 text-sm">
+                      {[
+                        { name: "Burger", amount: "15,995" },
+                        { name: "Pizza", amount: "5,160" },
+                        { name: "Books", amount: "16,040" },
+                        { name: "Shawarma", amount: "5,000" }
+                      ].map((item, i) => (
+                        <div key={i} className="flex justify-between items-center group cursor-pointer hover:text-primary transition-colors">
+                          <span className="text-muted-foreground group-hover:text-white">{item.name}</span>
+                          <span className="font-bold">Rs. {item.amount}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
-                <Button className="rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-xs font-bold px-6">
-                  <Plus className="w-3 h-3 mr-2 text-primary" /> Add Expense
-                </Button>
+
+                {/* Donut Chart and Legend */}
+                <div className="relative flex flex-col items-center justify-center pt-8">
+                  <div className="w-full h-[220px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RePieChart>
+                        <Pie
+                          data={donutData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={90}
+                          paddingAngle={5}
+                          dataKey="value"
+                        >
+                          {donutData.map((entry, index) => (
+                            <PieCell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
+                        />
+                      </RePieChart>
+                    </ResponsiveContainer>
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
+                       <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Spent</p>
+                       <p className="text-lg font-bold">Rs. 5,725</p>
+                    </div>
+                  </div>
+
+                  {/* Donut Legend */}
+                  <div className="grid grid-cols-2 gap-x-8 gap-y-2 mt-4">
+                    {donutData.map((entry, i) => (
+                      <div key={i} className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
+                        <span>{entry.name}</span>
+                        <span className="ml-auto text-white">{entry.value}%</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
 
-              {/* Grid Content */}
-              <div className="p-1">
-                <div className="grid grid-cols-7 gap-px bg-white/5">
-                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                    <div key={day} className="bg-transparent py-4 text-center text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
-                      {day}
-                    </div>
-                  ))}
-                  
-                  {days.map(day => {
-                    const dayExpenses = expenses.filter(e => e.day === day)
-                    return (
-                      <div key={day} className="min-h-[140px] bg-white/[0.02] p-2 border border-white/5 relative group hover:bg-white/[0.05] transition-colors">
-                        <span className="text-[10px] font-bold text-muted-foreground/40 absolute top-2 left-2">{day}</span>
-                        
-                        <div className="mt-4 space-y-2">
-                          {dayExpenses.map((exp, idx) => (
-                            <div key={idx} className="relative group/card cursor-pointer">
-                              <div className="relative aspect-square rounded-xl overflow-hidden border border-white/10 shadow-lg">
-                                <Image 
-                                  src={exp.image} 
-                                  alt={exp.name} 
-                                  fill 
-                                  className="object-cover group-hover/card:scale-110 transition-transform duration-500" 
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                                {exp.favorite && (
-                                  <div className="absolute top-1 right-1">
-                                    <Heart className="w-3 h-3 text-rose-500 fill-rose-500" />
-                                  </div>
-                                )}
-                              </div>
-                              <div className="mt-1 space-y-0.5">
-                                <p className="text-[8px] font-bold text-white truncate leading-tight">{exp.name}</p>
-                                <p className="text-[9px] font-bold text-primary">Rs. {exp.price}</p>
-                              </div>
-                            </div>
-                          ))}
+              {/* Bottom Row: Recent Purchases + Insights */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8 border-t border-white/5">
+                <div className="space-y-6">
+                  <h3 className="text-lg font-headline font-bold uppercase tracking-widest text-muted-foreground/80">Recent Purchases</h3>
+                  <div className="space-y-4">
+                    {recentPurchases.map((item, i) => (
+                      <div key={i} className="flex items-center gap-4 group cursor-pointer">
+                        <div className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-white/10">
+                           <Image src={item.image} alt={item.name} fill className="object-cover group-hover:scale-110 transition-transform" />
                         </div>
+                        <div className="flex-1 min-w-0">
+                           <p className="text-sm font-bold truncate">{item.name}</p>
+                           <p className="text-[10px] text-muted-foreground uppercase font-medium">{item.time}</p>
+                        </div>
+                        <div className="text-sm font-bold text-primary">Rs. {item.price}</div>
                       </div>
-                    )
-                  })}
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  <h3 className="text-lg font-headline font-bold uppercase tracking-widest text-muted-foreground/80">Student Insights</h3>
+                  <div className="p-6 rounded-3xl bg-primary/5 border border-primary/20 flex gap-4 items-start">
+                    <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center shrink-0">
+                       <Lightbulb className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="space-y-2">
+                       <p className="text-sm text-white/80 leading-relaxed font-medium">
+                          Consider cutting down on fast food purchases to balance your budget.
+                       </p>
+                       <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Recommended Action</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </GlassCard>
           </div>
 
-          {/* Sidebar Insights (4 cols) */}
+          {/* Sidebar (4 cols) */}
           <div className="lg:col-span-4 space-y-6">
-            <GlassCard className="p-8 border-white/10 space-y-10">
-              <h3 className="text-xl font-headline font-bold">Monthly Insights</h3>
+            <GlassCard className="p-8 border-white/10 space-y-8">
+              <h3 className="text-xl font-headline font-bold">Spending Breakdown</h3>
               
-              <div className="space-y-8">
-                <div className="flex justify-between items-end">
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Total Expenses</p>
-                    <p className="text-2xl font-headline font-bold text-white">Rs. 5,725</p>
+              <div className="space-y-4">
+                {[
+                  { name: "Burger", price: "1,920" },
+                  { name: "Pizza", price: "1,870" },
+                  { name: "Books", price: "1,050" },
+                  { name: "Stationery", price: "660" },
+                  { name: "Shawarma", price: "990" }
+                ].map((item, i) => (
+                  <div key={i} className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">{item.name}</span>
+                    <span className="font-bold">Rs. {item.price}</span>
                   </div>
-                  <BarChart3 className="w-6 h-6 text-primary/40" />
-                </div>
-
-                {/* Weekly Chart */}
-                <div className="h-[200px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
-                      <XAxis 
-                        dataKey="name" 
-                        axisLine={false} 
-                        tickLine={false} 
-                        tick={{ fill: '#64748b', fontSize: 10, fontWeight: 'bold' }} 
-                      />
-                      <YAxis hide />
-                      <Tooltip 
-                        contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', border: '1px solid rgba(239,26,184,0.3)', borderRadius: '12px' }}
-                        itemStyle={{ color: '#ef1ab8' }}
-                      />
-                      <Bar dataKey="total" radius={[4, 4, 0, 0]}>
-                        {chartData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={index === 4 ? '#ef1ab8' : 'rgba(239,26,184,0.3)'} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-
-                {/* Budget Tracker */}
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center text-xs font-bold uppercase tracking-widest">
-                    <span className="text-muted-foreground">Budgets</span>
-                    <span className="text-primary flex items-center gap-2">
-                       <div className="w-1.5 h-1.5 rounded-full bg-primary" /> 5,725 / 6,000
-                    </span>
-                    <span className="text-white">Rs. 6,000</span>
-                  </div>
-                  <Progress value={95} className="h-1.5 bg-white/5 [&>div]:bg-primary" />
-                  <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
-                    <p className="text-[10px] text-muted-foreground leading-relaxed italic">
-                      TIP: You're nearing your limit! Keep an eye on your remaining budget for the rest of the month.
-                    </p>
-                  </div>
-                </div>
-
-                <Button className="w-full h-12 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 text-sm font-bold shadow-inner">
-                  View Summary
-                </Button>
+                ))}
               </div>
 
-              <div className="pt-8 border-t border-white/5 flex justify-between items-center">
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Today's Spending</span>
-                <span className="text-lg font-headline font-bold text-primary neon-text-glow">Rs. 225</span>
+              {/* Weekly Trend Chart */}
+              <div className="h-[180px] w-full mt-8">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={weeklyChartData}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                    <XAxis 
+                      dataKey="name" 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fill: '#64748b', fontSize: 10, fontWeight: 'bold' }} 
+                    />
+                    <YAxis hide />
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', border: '1px solid rgba(239,26,184,0.3)', borderRadius: '12px' }}
+                      itemStyle={{ color: '#ef1ab8' }}
+                    />
+                    <Bar dataKey="total" radius={[4, 4, 0, 0]}>
+                      {weeklyChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={index === 4 ? '#ef1ab8' : 'rgba(239,26,184,0.3)'} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="space-y-4 pt-4 border-t border-white/5">
+                <p className="text-[10px] text-muted-foreground text-center leading-relaxed">
+                  Consider cutting down on fast food purchases to balance your budget for the rest of the month.
+                </p>
+                <Button className="w-full h-14 rounded-2xl bg-gradient-to-r from-primary to-secondary text-base font-bold shadow-[0_0_30px_rgba(239,26,184,0.3)] hover:opacity-90 active:scale-[0.98] transition-all">
+                  View Expensary
+                </Button>
+                <div className="flex items-center justify-center gap-2 text-[10px] text-muted-foreground font-bold uppercase tracking-widest">
+                   <TrendingUp className="w-3 h-3 text-emerald-400" /> Weekly Expenses Tracked
+                </div>
               </div>
             </GlassCard>
           </div>
         </div>
 
-        {/* Bottom Category Navigation */}
-        <div className="flex justify-center pt-8">
+        {/* Bottom Category Selector Component */}
+        <div className="flex justify-center pt-8 pb-12">
            <GlassCard className="inline-flex gap-8 px-10 py-4 rounded-full border-white/5 bg-white/5 backdrop-blur-3xl">
               {[
                 { label: "Burger", id: "burger", icon: ChefHat },
-                { label: "Place", id: "place", icon: Store },
-                { label: "Books", id: "books1", icon: BookOpen },
-                { label: "Books", id: "books2", icon: BookOpen },
+                { label: "Pizza", id: "pizza", icon: Pizza },
+                { label: "Pizza", id: "pizza2", icon: Pizza },
+                { label: "Books", id: "books", icon: BookOpen },
                 { label: "Stationery", id: "stationery", icon: PenTool }
               ].map((nav, i) => (
                 <div key={i} className="flex flex-col items-center gap-2 group cursor-pointer opacity-60 hover:opacity-100 transition-opacity">
