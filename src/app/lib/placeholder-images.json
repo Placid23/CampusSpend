@@ -1,0 +1,47 @@
+
+{
+  "placeholderImages": [
+    {
+      "id": "hero-bg",
+      "description": "Cosmic nebula dark background",
+      "imageUrl": "https://picsum.photos/seed/nebula/1920/1080",
+      "imageHint": "nebula space"
+    },
+    {
+      "id": "tech-product-1",
+      "description": "Premium wireless headphones",
+      "imageUrl": "https://picsum.photos/seed/audio/600/400",
+      "imageHint": "headphones tech"
+    },
+    {
+      "id": "tech-product-2",
+      "description": "Modern mechanical keyboard",
+      "imageUrl": "https://picsum.photos/seed/keyboard/600/400",
+      "imageHint": "keyboard tech"
+    },
+    {
+      "id": "tech-product-3",
+      "description": "Ergonomic laptop stand",
+      "imageUrl": "https://picsum.photos/seed/laptop/600/400",
+      "imageHint": "laptop accessories"
+    },
+    {
+      "id": "food-1",
+      "description": "Artisan university cafe latte",
+      "imageUrl": "https://picsum.photos/seed/coffee/600/400",
+      "imageHint": "coffee latte"
+    },
+    {
+      "id": "food-2",
+      "description": "Gourmet campus burger",
+      "imageUrl": "https://picsum.photos/seed/burger/600/400",
+      "imageHint": "burger food"
+    },
+    {
+      "id": "vendor-avatar",
+      "description": "Modern shop storefront",
+      "imageUrl": "https://picsum.photos/seed/store/200/200",
+      "imageHint": "store front"
+    }
+  ]
+}
