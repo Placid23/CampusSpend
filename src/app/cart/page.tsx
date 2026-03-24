@@ -2,6 +2,7 @@
 "use client"
 
 import { useState } from 'react'
+import { useRouter } from "next/navigation"
 import { DashboardShell } from "@/components/layout/Shell"
 import { GlassCard } from "@/components/ui/glass-card"
 import { Button } from "@/components/ui/button"
@@ -47,6 +48,7 @@ const initialCart = [
 
 export default function CartPage() {
   const [cart, setCart] = useState(initialCart)
+  const router = useRouter()
 
   const updateQuantity = (id: string, delta: number) => {
     setCart(prev => prev.map(item => 
@@ -180,7 +182,10 @@ export default function CartPage() {
               </div>
 
               <div className="space-y-4">
-                <Button className="w-full h-14 rounded-2xl bg-gradient-to-r from-primary to-secondary text-base font-bold shadow-[0_0_30_rgba(239,26,184,0.3)] hover:opacity-90 active:scale-[0.98] transition-all">
+                <Button 
+                  onClick={() => router.push('/checkout')}
+                  className="w-full h-14 rounded-2xl bg-gradient-to-r from-primary to-secondary text-base font-bold shadow-[0_0_30px_rgba(239,26,184,0.3)] hover:opacity-90 active:scale-[0.98] transition-all"
+                >
                   Proceed to Checkout
                 </Button>
                 <div className="flex items-center justify-center gap-2 text-[10px] text-muted-foreground font-bold uppercase tracking-widest text-center">
