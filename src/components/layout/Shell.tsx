@@ -40,9 +40,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Vendors", href: "/products", icon: Store },
+  { name: "Vendors", href: "/vendors", icon: Store },
   { name: "Orders", href: "#", icon: ClipboardList },
   { name: "Expenses", href: "/calendar", icon: CreditCard },
+  { name: "Insights", href: "/insights", icon: BrainCircuit },
   { name: "Settings", href: "#", icon: Settings },
 ]
 
@@ -72,10 +73,10 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                   <SidebarMenuItem key={item.name}>
                     <SidebarMenuButton 
                       asChild 
-                      isActive={pathname === item.href}
+                      isActive={pathname === item.href || (item.href === '/vendors' && pathname.startsWith('/vendors'))}
                       className={cn(
                         "h-12 px-6 rounded-2xl transition-all duration-300",
-                        pathname === item.href 
+                        (pathname === item.href || (item.href === '/vendors' && pathname.startsWith('/vendors')))
                           ? "bg-gradient-to-r from-primary to-secondary text-white shadow-[0_0_20px_rgba(239,26,184,0.3)]" 
                           : "hover:bg-white/5 text-muted-foreground hover:text-foreground"
                       )}
@@ -83,7 +84,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                       <Link href={item.href} className="flex items-center gap-4">
                         <item.icon className={cn("w-5 h-5")} />
                         <span className="font-bold text-sm tracking-wide">{item.name}</span>
-                        {pathname === item.href && (
+                        {(pathname === item.href || (item.href === '/vendors' && pathname.startsWith('/vendors'))) && (
                           <ChevronRight className="ml-auto w-4 h-4 opacity-50" />
                         )}
                       </Link>
@@ -110,7 +111,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               <div className="hidden md:flex items-center gap-10">
                 <Link href="/" className="text-sm font-bold tracking-widest uppercase hover:text-primary transition-colors">Home</Link>
                 <Link href="#" className="text-sm font-bold tracking-widest uppercase hover:text-primary transition-colors">How it Works</Link>
-                <Link href="/products" className="text-sm font-bold tracking-widest uppercase hover:text-primary transition-colors">Vendors</Link>
+                <Link href="/vendors" className="text-sm font-bold tracking-widest uppercase hover:text-primary transition-colors">Vendors</Link>
                 <Link href="#" className="text-sm font-bold tracking-widest uppercase hover:text-primary transition-colors">Features</Link>
                 <Link href="#" className="text-sm font-bold tracking-widest uppercase hover:text-primary transition-colors">About</Link>
               </div>

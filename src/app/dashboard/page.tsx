@@ -1,3 +1,4 @@
+
 "use client"
 
 import { DashboardShell } from "@/components/layout/Shell"
@@ -23,6 +24,7 @@ import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import Image from "next/image"
+import Link from "next/link"
 import { cn } from "@/lib/utils"
 
 export default function DashboardPage() {
@@ -45,9 +47,11 @@ export default function DashboardPage() {
                 <h1 className="text-4xl font-headline font-bold">Welcome, <span className="text-primary neon-text-glow">Gentuu!</span></h1>
                 <p className="text-muted-foreground text-sm">Here's your spending overview for April. Keep tracking and stay within your budget!</p>
               </div>
-              <Button className="glow-button rounded-2xl h-12 bg-primary px-8 group">
-                Browse Vendors <ChevronRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </Button>
+              <Link href="/vendors">
+                <Button className="glow-button rounded-2xl h-12 bg-primary px-8 group">
+                  Browse Vendors <ChevronRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </Link>
             </div>
 
             {/* Spending Cards */}
@@ -201,18 +205,18 @@ export default function DashboardPage() {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary" />
                   <input className="w-full bg-white/5 border border-white/10 rounded-xl py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-primary/50" placeholder="Search pizza, drinks..." />
                 </div>
-                <div className="relative aspect-video rounded-2xl overflow-hidden group cursor-pointer">
+                <Link href="/vendors/foodhub-cafe" className="block relative aspect-video rounded-2xl overflow-hidden group cursor-pointer">
                   <Image src="https://picsum.photos/seed/pizzashop/400/225" alt="Vendor" fill className="object-cover transition-transform group-hover:scale-105" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-4">
                     <div className="flex justify-between items-center">
                       <div>
-                        <p className="text-xs font-bold">Pizza & More</p>
+                        <p className="text-xs font-bold">FoodHub Cafe</p>
                         <p className="text-[8px] text-white/60">Nearest Vendor</p>
                       </div>
                       <Badge className="bg-primary text-[8px] h-4">OPEN</Badge>
                     </div>
                   </div>
-                </div>
+                </Link>
               </div>
 
               {/* Categories */}
@@ -228,7 +232,9 @@ export default function DashboardPage() {
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <h4 className="text-sm font-bold uppercase tracking-widest">Popular Items</h4>
-                  <Button variant="link" className="text-[10px] text-primary h-auto p-0">See All</Button>
+                  <Link href="/vendors">
+                    <Button variant="link" className="text-[10px] text-primary h-auto p-0">See All</Button>
+                  </Link>
                 </div>
                 <div className="grid grid-cols-3 gap-4">
                   {[
@@ -236,7 +242,7 @@ export default function DashboardPage() {
                     { name: "Calculus", img: "https://picsum.photos/seed/book1/100/100", price: 1800, rating: 4.5 },
                     { name: "Stationery", img: "https://picsum.photos/seed/stat1/100/100", price: 350, rating: 4.2 },
                   ].map((item, i) => (
-                    <div key={i} className="space-y-2 group cursor-pointer">
+                    <Link key={i} href="/products/cheesy-burger" className="space-y-2 group cursor-pointer">
                        <div className="relative aspect-square rounded-xl overflow-hidden">
                          <Image src={item.img} alt={item.name} fill className="object-cover group-hover:scale-110 transition-transform" />
                          <button className="absolute top-1 right-1 p-1 bg-black/40 rounded-full text-white hover:text-rose-500"><Heart className="w-3 h-3" /></button>
@@ -248,7 +254,7 @@ export default function DashboardPage() {
                            <Star className="w-2 h-2 fill-amber-500" /> {item.rating}
                          </div>
                        </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               </div>
@@ -256,16 +262,16 @@ export default function DashboardPage() {
               {/* Suggested For You */}
               <div className="space-y-4">
                 <h4 className="text-sm font-bold uppercase tracking-widest">Suggested for You</h4>
-                <div className="flex items-center gap-4 p-3 rounded-2xl bg-white/5 border border-white/5 hover:border-primary/20 transition-all cursor-pointer">
+                <Link href="/products/cheesy-burger" className="flex items-center gap-4 p-3 rounded-2xl bg-white/5 border border-white/5 hover:border-primary/20 transition-all cursor-pointer">
                   <div className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0">
                     <Image src="https://picsum.photos/seed/burger1/100/100" alt="Hamburger" fill className="object-cover" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold truncate">Hamburger</p>
+                    <p className="text-xs font-bold truncate">Cheesy Burger</p>
                     <p className="text-[10px] text-primary font-bold">Rs. 250.00</p>
                   </div>
                   <Button size="sm" className="h-7 rounded-lg text-[10px] px-3 bg-primary">Order Now</Button>
-                </div>
+                </Link>
               </div>
 
               {/* Bottom Quick Stats */}

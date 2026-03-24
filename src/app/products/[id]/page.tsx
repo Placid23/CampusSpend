@@ -56,9 +56,9 @@ export default function ProductDetailPage() {
         <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
           <Link href="/dashboard" className="hover:text-primary transition-colors">Home</Link>
           <ChevronRight className="w-3 h-3" />
-          <Link href="/products" className="hover:text-primary transition-colors">Vendors</Link>
+          <Link href="/vendors" className="hover:text-primary transition-colors">Vendors</Link>
           <ChevronRight className="w-3 h-3" />
-          <span className="text-primary/70">FoodHub Café</span>
+          <Link href="/vendors/foodhub-cafe" className="text-primary/70 hover:text-primary transition-colors">FoodHub Café</Link>
           <ChevronRight className="w-3 h-3" />
           <span className="text-primary neon-text-glow">Cheesy Burger</span>
         </div>
