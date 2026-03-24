@@ -20,7 +20,9 @@ import {
   BookOpen,
   PenTool,
   TrendingUp,
-  MoreVertical
+  MoreVertical,
+  User,
+  Settings
 } from "lucide-react"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
@@ -35,14 +37,17 @@ const recentActivity = [
 export default function VendorProfilePage() {
   return (
     <VendorShell>
-      <div className="space-y-8 animate-in fade-in slide-in-from-bottom duration-1000">
+      <div className="space-y-8 animate-in fade-in slide-in-from-bottom duration-700">
         
         {/* Header Title */}
-        <h1 className="text-4xl font-headline font-bold text-white tracking-tight">Vendor Profile</h1>
+        <div className="space-y-2">
+          <h1 className="text-4xl font-headline font-bold text-white tracking-tight">Vendor <span className="text-primary neon-text-glow">Profile</span></h1>
+          <p className="text-muted-foreground text-sm">Manage your store identity and account preferences.</p>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
-          {/* Left Column: Profile Card (4 cols) */}
+          {/* Left Column: Profile Card (col-span-4) */}
           <div className="lg:col-span-4 space-y-6">
             <GlassCard className="p-8 border-white/10 flex flex-col items-center text-center space-y-6 bg-white/5 backdrop-blur-3xl">
               <div className="relative w-48 h-48">
@@ -69,24 +74,22 @@ export default function VendorProfilePage() {
               </div>
 
               <div className="w-full space-y-4">
-                <div className="h-14 w-full rounded-2xl bg-white/5 border border-white/10 flex flex-col items-center justify-center">
+                <div className="h-16 w-full rounded-2xl bg-white/5 border border-white/10 flex flex-col items-center justify-center px-4">
                   <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Balance</p>
                   <div className="flex items-center gap-3">
-                    <span className="text-lg font-bold text-white">Rs. 12,950</span>
+                    <span className="text-xl font-bold text-white">Rs. 12,950</span>
                     <div className="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-[8px] font-bold uppercase flex items-center gap-1.5">
                       <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div> Open
                     </div>
                   </div>
                 </div>
 
-                <div className="space-y-3 pt-2">
+                <div className="space-y-3 pt-2 text-left w-full px-2">
                   <div className="flex items-center gap-3 text-xs text-muted-foreground font-medium">
-                    <div className="w-1.5 h-1.5 rounded-full bg-primary"></div>
-                    <span>Email ID</span>
+                    <Mail className="w-3 h-3 text-primary" />
+                    <span className="truncate">qfoodhub@campusmail.com</span>
                   </div>
-                  <p className="text-xs text-white/80 pl-4.5">qfoodhub@campusmail.com</p>
-                  
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground font-medium pt-2">
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground font-medium">
                     <Phone className="w-3 h-3 text-primary" />
                     <span>+92 300 1234567</span>
                   </div>
@@ -99,135 +102,112 @@ export default function VendorProfilePage() {
             </GlassCard>
           </div>
 
-          {/* Middle Column: Form (5 cols) */}
-          <div className="lg:col-span-5">
-            <GlassCard className="p-10 border-white/10 space-y-8 bg-white/5 backdrop-blur-3xl">
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Vendor Name</Label>
-                  <Input 
-                    defaultValue="QFoodHub Café"
-                    className="h-12 bg-white/5 border-white/10 rounded-xl px-6 focus:border-primary/50 transition-all text-sm"
-                  />
+          {/* Right Area: Form and Info (col-span-8) */}
+          <div className="lg:col-span-8 space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Form Card */}
+              <GlassCard className="p-8 border-white/10 space-y-6 bg-white/5 backdrop-blur-3xl">
+                <div className="flex items-center gap-3 mb-2">
+                  <Settings className="w-5 h-5 text-primary" />
+                  <h3 className="text-lg font-headline font-bold text-white">General Settings</h3>
                 </div>
+                
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Vendor Name</Label>
+                    <Input 
+                      defaultValue="QFoodHub Café"
+                      className="h-12 bg-white/5 border-white/10 rounded-xl px-6 focus:border-primary/50 transition-all text-sm"
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Contact Email</Label>
-                  <Input 
-                    defaultValue="qfoodhub@campusmail.com"
-                    className="h-12 bg-white/5 border-white/10 rounded-xl px-6 focus:border-primary/50 transition-all text-sm"
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Contact Email</Label>
+                    <Input 
+                      defaultValue="qfoodhub@campusmail.com"
+                      className="h-12 bg-white/5 border-white/10 rounded-xl px-6 focus:border-primary/50 transition-all text-sm"
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Contact Number</Label>
-                  <div className="relative group">
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Contact Number</Label>
                     <Input 
                       defaultValue="+92 300 1234567"
                       className="h-12 bg-white/5 border-white/10 rounded-xl px-6 focus:border-primary/50 transition-all text-sm"
                     />
-                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
                   </div>
-                </div>
 
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Address</Label>
-                  <textarea 
-                    className="w-full min-h-[100px] bg-white/5 border border-white/10 rounded-xl p-6 focus:border-primary/50 transition-all text-sm outline-none resize-none"
-                    defaultValue="Science Block, Campus University, Karachi, Pakistan"
-                  />
-                </div>
-
-                <div className="space-y-4">
-                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Bank:</Label>
-                  <div className="p-6 rounded-2xl bg-white/5 border border-white/10 space-y-4">
-                    <p className="text-sm font-bold text-white/80">My Bank</p>
-                    <p className="text-sm font-bold text-white/60 tracking-[0.2em]">1234 5678 9012 3456</p>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Address</Label>
+                    <textarea 
+                      className="w-full min-h-[100px] bg-white/5 border border-white/10 rounded-xl p-6 focus:border-primary/50 transition-all text-sm outline-none resize-none text-white/80"
+                      defaultValue="Science Block, Campus University, Karachi, Pakistan"
+                    />
                   </div>
-                </div>
-
-                <button className="text-xs font-bold text-white/60 uppercase tracking-widest hover:text-primary transition-colors pt-4">
-                  Change Password
-                </button>
-              </div>
-            </GlassCard>
-          </div>
-
-          {/* Right Column: Info Sidebar (3 cols) */}
-          <div className="lg:col-span-3">
-            <GlassCard className="p-8 border-white/10 space-y-8 bg-white/5 backdrop-blur-3xl">
-              <h3 className="text-lg font-headline font-bold text-white">Vendor Information</h3>
-              
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Vendor Name</p>
-                  <div className="h-12 w-full rounded-xl bg-white/5 border border-white/10 flex items-center px-6 text-sm font-bold text-white/80">
-                    QFoodHub Cafe
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Contact Email</p>
-                  <div className="h-12 w-full rounded-xl bg-white/5 border border-white/10 flex items-center px-6 text-xs text-white/60 truncate">
-                    qfoodhub@campusmail.com
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Contact Number</p>
-                  <div className="h-12 w-full rounded-xl bg-white/5 border border-white/10 flex items-center px-6 text-sm font-bold text-white/80">
-                    +92 300 1234567
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Address</p>
-                  <div className="p-6 rounded-xl bg-white/5 border border-white/10 text-xs text-white/60 leading-relaxed">
-                    Science Block, Campus University, Karachi, Pakistan
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 flex items-center gap-2">
-                    Bank: <CreditCard className="w-3 h-3" /> My Bank
-                  </p>
-                  <div className="h-12 w-full rounded-xl bg-white/5 border border-white/10 flex items-center px-6 text-sm font-bold text-white/80 tracking-widest">
-                    1234 5678 9012 3456
-                  </div>
-                </div>
-
-                <Button className="w-full h-14 rounded-2xl bg-gradient-to-r from-primary to-secondary text-base font-bold shadow-[0_0_30px_rgba(239,26,184,0.4)] hover:opacity-90 active:scale-[0.98] transition-all">
-                  Update Profile
-                </Button>
-              </div>
-            </GlassCard>
-          </div>
-        </div>
-
-        {/* Recent Activity Section */}
-        <div className="space-y-6">
-          <h3 className="text-xl font-headline font-bold text-white">Recent Activity</h3>
-          <div className="space-y-4">
-            {recentActivity.map((activity, i) => (
-              <GlassCard key={i} className="p-4 border-white/5 hover:border-primary/20 transition-all flex items-center gap-6 group">
-                <div className="relative w-16 h-16 rounded-2xl overflow-hidden shrink-0 border border-white/10">
-                  {activity.isUser ? (
-                    <Image src={activity.userAvatar!} alt="User" fill className="object-cover" />
-                  ) : (
-                    <Image src={activity.image} alt={activity.name} fill className="object-cover group-hover:scale-110 transition-transform duration-500" />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3">
-                    <h4 className="text-base font-bold text-white">{activity.name}: <span className="font-normal text-muted-foreground">{activity.time}</span></h4>
-                  </div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mt-1">{activity.desc}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-lg font-bold text-primary neon-text-glow">{activity.price}</p>
                 </div>
               </GlassCard>
-            ))}
+
+              {/* Info & Bank Card */}
+              <GlassCard className="p-8 border-white/10 space-y-8 bg-white/5 backdrop-blur-3xl">
+                <div className="flex items-center gap-3">
+                  <CreditCard className="w-5 h-5 text-primary" />
+                  <h3 className="text-lg font-headline font-bold text-white">Billing Information</h3>
+                </div>
+                
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Bank Account</p>
+                    <div className="p-6 rounded-2xl bg-white/5 border border-white/10 space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-bold text-white/80">My Bank</span>
+                        <Badge className="bg-primary/20 text-primary border-none text-[8px] uppercase">Default</Badge>
+                      </div>
+                      <p className="text-base font-bold text-white/60 tracking-[0.2em]">**** **** **** 3456</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Security</p>
+                    <div className="space-y-3">
+                      <Button variant="outline" className="w-full h-12 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 text-xs font-bold uppercase tracking-widest">
+                        Change Password
+                      </Button>
+                      <Button variant="outline" className="w-full h-12 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 text-xs font-bold uppercase tracking-widest text-rose-400 hover:text-rose-500">
+                        Deactivate Account
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </GlassCard>
+            </div>
+
+            {/* Recent Activity Full Width */}
+            <div className="space-y-6">
+              <h3 className="text-xl font-headline font-bold text-white">Recent Activity</h3>
+              <div className="space-y-4">
+                {recentActivity.map((activity, i) => (
+                  <GlassCard key={i} className="p-4 border-white/5 hover:border-primary/20 transition-all flex items-center gap-6 group">
+                    <div className="relative w-16 h-16 rounded-2xl overflow-hidden shrink-0 border border-white/10">
+                      {activity.isUser ? (
+                        <Image src={activity.userAvatar!} alt="User" fill className="object-cover" />
+                      ) : (
+                        <Image src={activity.image} alt={activity.name} fill className="object-cover group-hover:scale-110 transition-transform duration-500" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3">
+                        <h4 className="text-base font-bold text-white">{activity.name}</h4>
+                        <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">{activity.time}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">{activity.desc}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-bold text-primary neon-text-glow">{activity.price}</p>
+                    </div>
+                  </GlassCard>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 
