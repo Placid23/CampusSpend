@@ -17,7 +17,8 @@ import {
   Bell,
   ChevronRight,
   ClipboardList,
-  CreditCard
+  CreditCard,
+  ShoppingCart
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -41,6 +42,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Vendors", href: "/vendors", icon: Store },
+  { name: "Cart", href: "/cart", icon: ShoppingCart },
   { name: "Orders", href: "#", icon: ClipboardList },
   { name: "Expenses", href: "/calendar", icon: CreditCard },
   { name: "Insights", href: "/insights", icon: BrainCircuit },
