@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -26,12 +27,15 @@ import { cn } from "@/lib/utils"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { doc } from 'firebase/firestore'
 import { useFirestore, useDoc, useUser, useMemoFirebase } from '@/firebase'
+import { useToast } from "@/hooks/use-toast"
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: productId } = use(params)
   const [quantity, setQuantity] = useState(1)
+  const [isAdding, setIsAdding] = useState(false)
   const db = useFirestore()
   const { profile } = useUser()
+  const { toast } = useToast()
 
   // Fetch Product Details
   const productRef = useMemoFirebase(() => doc(db, "products", productId), [db, productId])
@@ -39,6 +43,39 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
   const basePrice = product?.price || 0
   const totalPrice = basePrice * quantity
+
+  const handleAddToCart = () => {
+    if (!product) return
+    setIsAdding(true)
+    
+    // Simple LocalStorage Cart logic
+    const existingCart = JSON.parse(localStorage.getItem('campus-spend-cart') || '[]')
+    const cartItem = {
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      vendorOwnerId: product.vendorOwnerId,
+      imageUrl: product.imageUrl,
+      quantity: quantity,
+      category: product.category
+    }
+
+    const itemIndex = existingCart.findIndex((item: any) => item.id === product.id)
+    if (itemIndex > -1) {
+      existingCart[itemIndex].quantity += quantity
+    } else {
+      existingCart.push(cartItem)
+    }
+
+    localStorage.setItem('campus-spend-cart', JSON.stringify(existingCart))
+    
+    toast({
+      title: "Added to Cart",
+      description: `${quantity}x ${product.name} added to your tray.`,
+    })
+    
+    setTimeout(() => setIsAdding(false), 500)
+  }
 
   if (productLoading) {
     return (
@@ -168,8 +205,12 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   </div>
                   
                   <div className="space-y-3">
-                    <Button className="w-full h-14 rounded-2xl bg-gradient-to-r from-primary to-secondary text-base font-bold shadow-[0_0_30px_rgba(239,26,184,0.3)] hover:opacity-90">
-                      Add to Cart - ₦{totalPrice.toLocaleString()}
+                    <Button 
+                      disabled={isAdding}
+                      onClick={handleAddToCart}
+                      className="w-full h-14 rounded-2xl bg-gradient-to-r from-primary to-secondary text-base font-bold shadow-[0_0_30px_rgba(239,26,184,0.3)] hover:opacity-90 active:scale-95 transition-all"
+                    >
+                      {isAdding ? <Loader2 className="w-5 h-5 animate-spin" /> : `Add to Cart - ₦${totalPrice.toLocaleString()}`}
                     </Button>
                     <div className="flex flex-col gap-1 items-center">
                        <div className="flex items-center gap-2 text-[10px] text-primary font-bold uppercase tracking-widest">

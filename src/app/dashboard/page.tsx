@@ -1,6 +1,7 @@
 
 "use client"
 
+import * as React from "react"
 import { DashboardShell } from "@/components/layout/Shell"
 import { GlassCard } from "@/components/ui/glass-card"
 import { 
@@ -27,12 +28,34 @@ import { Badge } from "@/components/ui/badge"
 import Image from "next/image"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
-import { useUser } from "@/firebase"
+import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase"
+import { collection, query, where, orderBy } from 'firebase/firestore'
+import { isToday } from 'date-fns'
 
 export default function DashboardPage() {
-  const { profile, isProfileLoading } = useUser()
+  const { user, profile, isProfileLoading } = useUser()
+  const db = useFirestore()
   const days = Array.from({ length: 30 }, (_, i) => i + 1);
   const categories = ["All", "Food", "Books", "Stationery"];
+
+  // Fetch real orders count
+  const ordersQuery = useMemoFirebase(() => {
+    if (!user) return null
+    return query(collection(db, "users", user.uid, "orders"))
+  }, [db, user])
+  const { data: orders } = useCollection(ordersQuery)
+
+  // Fetch today's spending
+  const expensesQuery = useMemoFirebase(() => {
+    if (!user) return null
+    return query(collection(db, "users", user.uid, "expenses"))
+  }, [db, user])
+  const { data: expenses } = useCollection(expensesQuery)
+
+  const todaySpending = React.useMemo(() => {
+    return expenses?.filter(e => isToday(new Date(e.expenseDate)))
+      .reduce((sum, e) => sum + e.amount, 0) || 0
+  }, [expenses])
 
   if (isProfileLoading) {
     return (
@@ -61,7 +84,7 @@ export default function DashboardPage() {
                   Welcome, <span className="text-primary neon-text-glow">{profile?.name || 'Student'}!</span>
                 </h1>
                 <p className="text-muted-foreground text-sm text-center md:text-left max-w-lg mx-auto md:mx-0">
-                  Here's your spending overview for the current period. Keep tracking and stay within your budget!
+                  Manage your tray, track your Naira (₦) expenses, and stay within your budget.
                 </p>
               </div>
               <Link href="/vendors" className="w-full md:w-auto">
@@ -101,89 +124,62 @@ export default function DashboardPage() {
                     <h3 className="font-bold text-sm uppercase tracking-tight">Today's Spending</h3>
                     <div className="text-right">
                        <span className="text-xs text-muted-foreground mr-1">₦</span>
-                       <span className="font-bold">0.00</span>
+                       <span className="font-bold">{todaySpending.toLocaleString()}</span>
                     </div>
                   </div>
                   <div className="space-y-3">
-                    <Progress value={0} className="h-2 bg-white/5 [&>div]:bg-primary" />
+                    <Progress value={Math.min((todaySpending / 500) * 100, 100)} className="h-2 bg-white/5 [&>div]:bg-primary" />
                     <div className="flex justify-between items-center">
                       <p className="text-[10px] text-muted-foreground">Daily Limit Estimate: ₦500</p>
-                      <Badge className="bg-emerald-500/10 text-emerald-400 border-none text-[8px] font-bold uppercase tracking-widest px-2 py-0.5">Healthy</Badge>
+                      <Badge className={cn("border-none text-[8px] font-bold uppercase tracking-widest px-2 py-0.5", todaySpending > 500 ? "bg-rose-500/10 text-rose-400" : "bg-emerald-500/10 text-emerald-400")}>
+                        {todaySpending > 500 ? "Over Limit" : "Healthy"}
+                      </Badge>
                     </div>
                   </div>
                 </GlassCard>
 
                 <GlassCard className="p-6 border-white/5 flex flex-col justify-center items-center text-center space-y-2 group hover:border-primary/30 transition-all">
                   <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em]">Total Orders</p>
-                  <h3 className="text-5xl font-headline font-bold text-primary group-hover:scale-110 transition-transform">0</h3>
+                  <h3 className="text-5xl font-headline font-bold text-primary group-hover:scale-110 transition-transform">
+                    {orders?.length || 0}
+                  </h3>
                   <div className="flex items-center gap-1 text-[8px] text-muted-foreground font-bold uppercase">
-                    <TrendingUp className="w-3 h-3 text-muted-foreground" /> Start shopping to track orders
+                    <TrendingUp className="w-3 h-3 text-muted-foreground" /> Orders recorded in database
                   </div>
                 </GlassCard>
               </div>
             </div>
 
-            {/* Spending Tracker (Calendar) */}
+            {/* Spending Tracker (Simplified Calendar) */}
             <GlassCard className="p-6 md:p-8 border-white/5">
                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
-                 <h3 className="text-xl font-headline font-bold">Spending Tracker</h3>
-                 <div className="flex items-center gap-4 bg-white/5 px-4 py-2 rounded-2xl border border-white/10">
-                   <span className="text-xs font-bold uppercase tracking-widest">Active Month</span>
-                   <div className="flex gap-1 border-l border-white/10 pl-4">
-                      <Button size="icon" variant="ghost" className="h-8 w-8 rounded-xl hover:bg-white/10 text-muted-foreground"><ChevronLeft className="w-4 h-4"/></Button>
-                      <Button size="icon" variant="ghost" className="h-8 w-8 rounded-xl hover:bg-white/10 text-muted-foreground"><ChevronRight className="w-4 h-4"/></Button>
-                   </div>
-                 </div>
+                 <h3 className="text-xl font-headline font-bold">Recent History</h3>
+                 <Link href="/calendar">
+                   <Button variant="ghost" size="sm" className="text-primary text-[10px] font-bold uppercase tracking-widest hover:bg-primary/10">View Detailed Report</Button>
+                 </Link>
                </div>
 
-               <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
-                 <div className="md:col-span-8">
-                   <div className="grid grid-cols-7 gap-1 md:gap-2 mb-4">
-                     {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                       <div key={`header-${day}`} className="text-center text-[8px] md:text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{day}</div>
-                     ))}
-                   </div>
-                   <div className="grid grid-cols-7 gap-1 md:gap-2">
-                     {days.map(day => (
-                       <div 
-                         key={day} 
-                         className={cn(
-                           "aspect-square rounded-lg md:rounded-xl flex items-center justify-center text-[10px] md:text-xs font-bold border border-white/5 transition-all cursor-pointer hover:bg-white/10 relative",
-                         )}
-                       >
-                         {day}
+               <div className="space-y-4">
+                  {expenses?.slice(0, 5).map((exp, i) => (
+                    <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-primary/20 transition-all">
+                       <div className="flex items-center gap-4">
+                          <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                             <CreditCard className="w-4 h-4" />
+                          </div>
+                          <div>
+                             <p className="text-sm font-bold">{exp.description}</p>
+                             <p className="text-[10px] text-muted-foreground uppercase font-medium">{new Date(exp.expenseDate).toLocaleDateString()}</p>
+                          </div>
                        </div>
-                     ))}
-                   </div>
-                   <div className="flex flex-wrap gap-4 mt-8 justify-center md:justify-start">
-                     <div className="flex items-center gap-2 text-[8px] uppercase font-bold tracking-widest text-emerald-400">
-                       <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div> Low
-                     </div>
-                     <div className="flex items-center gap-2 text-[8px] uppercase font-bold tracking-widest text-amber-400">
-                       <div className="w-1.5 h-1.5 rounded-full bg-amber-400"></div> Med
-                     </div>
-                     <div className="flex items-center gap-2 text-[8px] uppercase font-bold tracking-widest text-rose-400">
-                       <div className="w-1.5 h-1.5 rounded-full bg-rose-400"></div> High
-                     </div>
-                   </div>
-                 </div>
-
-                 {/* Calendar Side Breakdown */}
-                 <div className="md:col-span-4 space-y-6 bg-white/5 p-6 rounded-3xl border border-white/5">
-                    <div className="space-y-4">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Recent Expenses</p>
-                      <div className="space-y-4 py-8 text-center">
-                        <p className="text-[10px] text-muted-foreground uppercase font-bold">No recent expenses</p>
-                      </div>
+                       <p className="text-sm font-bold text-white">₦{exp.amount.toLocaleString()}</p>
                     </div>
-
-                    <div className="pt-6 border-t border-white/10 space-y-4">
-                       <h4 className="text-[10px] font-bold uppercase tracking-widest text-white/60">Category Split</h4>
-                       <div className="space-y-3">
-                         <p className="text-[8px] text-muted-foreground uppercase font-bold text-center">Pending data...</p>
-                       </div>
+                  ))}
+                  {(!expenses || expenses.length === 0) && (
+                    <div className="py-12 text-center space-y-2">
+                       <ClipboardList className="w-10 h-10 text-muted-foreground/20 mx-auto" />
+                       <p className="text-[10px] text-muted-foreground uppercase font-bold">No transactions found</p>
                     </div>
-                 </div>
+                  )}
                </div>
             </GlassCard>
 
@@ -196,31 +192,24 @@ export default function DashboardPage() {
               {/* Order Box */}
               <div className="space-y-4">
                 <h3 className="text-lg font-headline font-bold">Order from Vendors</h3>
-                <div className="relative group">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary" />
-                  <input className="w-full bg-white/5 border border-white/10 rounded-xl py-2 pl-10 pr-4 text-xs focus:outline-none focus:border-primary/50 transition-all" placeholder="Search pizza, drinks..." />
+                <div className="bg-primary/5 border border-dashed border-primary/20 rounded-2xl p-8 text-center space-y-4">
+                  <Store className="w-8 h-8 text-primary mx-auto" />
+                  <p className="text-[10px] text-muted-foreground uppercase font-bold">Discover verified campus merchants</p>
+                  <Link href="/vendors" className="block">
+                    <Button size="sm" className="w-full bg-primary/20 text-primary hover:bg-primary/30 border border-primary/40 text-[10px] font-bold uppercase">Explore Marketplace</Button>
+                  </Link>
                 </div>
-                <div className="bg-white/5 border border-dashed border-white/10 rounded-2xl p-8 text-center space-y-2">
-                  <Store className="w-8 h-8 text-muted-foreground/20 mx-auto" />
-                  <p className="text-[10px] text-muted-foreground uppercase font-bold">Browse vendors to start shopping</p>
-                </div>
-              </div>
-
-              {/* Categories */}
-              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                {categories.map(cat => (
-                  <Badge key={cat} className={cn("rounded-full px-4 py-1.5 text-[10px] font-bold border-none cursor-pointer shrink-0 transition-all", cat === "All" ? "bg-primary text-white" : "bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-white")}>
-                    {cat}
-                  </Badge>
-                ))}
               </div>
 
               {/* Suggested For You */}
               <div className="space-y-4">
-                <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Marketplace Hint</h4>
-                <div className="p-4 rounded-2xl bg-primary/5 border border-primary/20 space-y-2">
+                <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Quick Tray Access</h4>
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2">
                   <p className="text-[10px] text-primary font-bold uppercase tracking-widest">Digital Wallet Ready</p>
-                  <p className="text-[10px] text-muted-foreground leading-relaxed">Your account is active. Use the button above to discover campus vendors.</p>
+                  <p className="text-[10px] text-muted-foreground leading-relaxed">Your wallet is synced. Items added to your tray will be calculated using your Naira balance.</p>
+                  <Link href="/cart" className="block pt-2">
+                    <Button variant="outline" size="sm" className="w-full h-8 text-[8px] font-bold uppercase tracking-widest border-white/10">View My Tray <ShoppingCart className="ml-2 w-3 h-3" /></Button>
+                  </Link>
                 </div>
               </div>
 
@@ -228,15 +217,15 @@ export default function DashboardPage() {
               <div className="grid grid-cols-2 gap-4 pt-6 border-t border-white/5">
                 <div className="space-y-1 group cursor-default">
                   <div className="flex items-center gap-2 text-primary group-hover:neon-text-glow transition-all">
-                    <Store className="w-4 h-4" /> <span className="text-xl font-headline font-bold">0+</span>
+                    <Store className="w-4 h-4" /> <span className="text-xl font-headline font-bold">Live</span>
                   </div>
-                  <p className="text-[8px] text-muted-foreground uppercase font-bold tracking-widest">Active Shops</p>
+                  <p className="text-[8px] text-muted-foreground uppercase font-bold tracking-widest">Ecosystem</p>
                 </div>
                 <div className="space-y-1 group cursor-default">
                   <div className="flex items-center gap-2 text-primary group-hover:neon-text-glow transition-all">
                     <Zap className="w-4 h-4" /> <span className="text-xl font-headline font-bold">100%</span>
                   </div>
-                  <p className="text-[8px] text-muted-foreground uppercase font-bold tracking-widest">Auto Log</p>
+                  <p className="text-[8px] text-muted-foreground uppercase font-bold tracking-widest">Verified</p>
                 </div>
               </div>
 
