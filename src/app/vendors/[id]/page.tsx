@@ -1,7 +1,6 @@
-
 "use client"
 
-import { useState } from 'react'
+import { useState, use } from 'react'
 import { DashboardShell } from "@/components/layout/Shell"
 import { GlassCard } from "@/components/ui/glass-card"
 import { Button } from "@/components/ui/button"
@@ -13,67 +12,44 @@ import {
   ChevronDown, 
   Star, 
   Heart,
-  MoreVertical,
   Zap,
-  ShoppingBag,
-  ArrowRight
+  Loader2,
+  Package,
+  ArrowLeft
 } from "lucide-react"
 import Image from 'next/image'
 import Link from 'next/link'
 import { cn } from "@/lib/utils"
+import { collection, query, where, doc } from 'firebase/firestore'
+import { useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase'
 
-const categories = ["All", "Fast Food", "Drinks"]
-
-const products = [
-  {
-    id: "cheesy-burger",
-    name: "Cheesy Burger",
-    vendor: "FoodHub Café",
-    price: 250.00,
-    tags: ["Fast Food", "300m"],
-    image: "https://picsum.photos/seed/burger-detail/300/300",
-    promo: "Today only!",
-    rating: 34
-  },
-  {
-    id: "pepperoni-pizza",
-    name: "Pepperoni Pizza",
-    vendor: "FoodHub Café",
-    price: 250.00,
-    tags: ["Fast Food", "300m"],
-    image: "https://picsum.photos/seed/pizza-detail/300/300",
-    promo: "Today only!",
-    rating: 34
-  },
-  {
-    id: "shawarma",
-    name: "Shawarma",
-    vendor: "FoodHub Café",
-    price: 250.00,
-    tags: ["Fast Food", "300m"],
-    image: "https://picsum.photos/seed/shawarma-detail/300/300",
-    promo: "",
-    rating: 34
-  },
-  {
-    id: "veggie-burger",
-    name: "Veggie Burger",
-    vendor: "FoodHub Café",
-    price: 250.00,
-    tags: ["Fast Food", "300m"],
-    image: "https://picsum.photos/seed/v-burger/300/300",
-    promo: "",
-    rating: 34
-  }
-]
-
-const drinks = [
-  { name: "Coke & Fries", price: 100.00, image: "https://picsum.photos/seed/coke/100/100" },
-  { name: "Mojito", price: 150.00, image: "https://picsum.photos/seed/mojito/100/100" }
-]
-
-export default function VendorProductPage() {
+export default function VendorProductPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id: vendorId } = use(params)
   const [activeCategory, setActiveCategory] = useState("All")
+  const db = useFirestore()
+
+  // Fetch Vendor Details
+  const vendorRef = useMemoFirebase(() => doc(db, "vendors", vendorId), [db, vendorId])
+  const { data: vendor, isLoading: vendorLoading } = useDoc(vendorRef)
+
+  // Fetch Products for this Vendor
+  const productsQuery = useMemoFirebase(() => {
+    return query(collection(db, "products"), where("vendorOwnerId", "==", vendor?.userId || "none"))
+  }, [db, vendor?.userId])
+
+  const { data: products, isLoading: productsLoading } = useCollection(productsQuery)
+
+  const categories = ["All", "Fast Food", "Drinks", "Books", "Stationery"]
+
+  if (vendorLoading) {
+    return (
+      <DashboardShell>
+        <div className="flex items-center justify-center h-[60vh]">
+          <Loader2 className="w-12 h-12 text-primary animate-spin" />
+        </div>
+      </DashboardShell>
+    )
+  }
 
   return (
     <DashboardShell>
@@ -81,12 +57,17 @@ export default function VendorProductPage() {
         
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <h1 className="text-4xl font-headline font-bold">FoodHub Café</h1>
-            <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-              <span className="flex items-center gap-1.5"><MapPin className="w-3 h-3 text-primary" /> 300m from Main Campus</span>
-              <span className="text-primary">+</span>
-              <span className="flex items-center gap-1.5"><Clock className="w-3 h-3 text-primary" /> Open Until 10:30 PM</span>
+          <div className="space-y-4">
+            <Link href="/vendors" className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors">
+              <ArrowLeft className="w-3 h-3" /> Back to Vendors
+            </Link>
+            <div className="space-y-2">
+              <h1 className="text-4xl font-headline font-bold">{vendor?.name || "Vendor Store"}</h1>
+              <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                <span className="flex items-center gap-1.5"><MapPin className="w-3 h-3 text-primary" /> 300m from Main Campus</span>
+                <span className="text-primary">+</span>
+                <span className="flex items-center gap-1.5"><Clock className="w-3 h-3 text-primary" /> Open Until 10:30 PM</span>
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -113,13 +94,13 @@ export default function VendorProductPage() {
                 key={cat} 
                 onClick={() => setActiveCategory(cat)}
                 className={cn(
-                  "rounded-xl px-6 py-2 text-xs font-bold transition-all border",
+                  "rounded-xl px-6 py-2 text-xs font-bold transition-all border shrink-0",
                   activeCategory === cat 
                     ? "bg-primary/20 border-primary text-white shadow-[0_0_15px_rgba(239,26,184,0.3)]" 
                     : "bg-white/5 border-white/10 text-muted-foreground hover:bg-white/10"
                 )}
               >
-                {cat} {cat === "All" && <ChevronDown className="inline ml-1 w-3 h-3" />}
+                {cat}
               </button>
             ))}
           </div>
@@ -127,113 +108,62 @@ export default function VendorProductPage() {
 
         {/* Product Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {products.map((product) => (
-            <GlassCard key={product.id} className="p-0 border-white/10 group overflow-hidden flex flex-col md:flex-row hover:border-primary/40 transition-all">
-              <div className="flex-1 p-8 space-y-6">
-                <div className="flex justify-between items-start">
-                  <div className="space-y-1">
-                    <h3 className="text-2xl font-headline font-bold">{product.name}</h3>
-                    <p className="text-xs text-muted-foreground">{product.vendor}</p>
+          {productsLoading ? (
+            <div className="col-span-full py-20 flex flex-col items-center gap-4">
+              <Loader2 className="w-8 h-8 text-primary animate-spin" />
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Fetching Fresh Menu...</p>
+            </div>
+          ) : products && products.length > 0 ? (
+            products.map((product) => (
+              <GlassCard key={product.id} className="p-0 border-white/10 group overflow-hidden flex flex-col md:flex-row hover:border-primary/40 transition-all">
+                <div className="flex-1 p-8 space-y-6">
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-1">
+                      <h3 className="text-2xl font-headline font-bold truncate pr-4">{product.name}</h3>
+                      <p className="text-xs text-muted-foreground uppercase font-bold tracking-widest">{product.category}</p>
+                    </div>
+                    <button className="text-muted-foreground hover:text-rose-500 transition-colors">
+                      <Heart className="w-5 h-5" />
+                    </button>
                   </div>
-                  <button className="text-muted-foreground hover:text-rose-500 transition-colors">
-                    <Heart className="w-5 h-5" />
-                  </button>
+                  
+                  <div className="flex flex-wrap gap-2">
+                    <Badge className="bg-primary/10 text-primary border-none px-3 py-0.5 text-[8px] font-bold flex gap-1 items-center rounded-lg uppercase">
+                      <Zap className="w-2 h-2" /> In Stock: {product.stock}
+                    </Badge>
+                  </div>
+
+                  <div className="text-2xl font-headline font-bold text-primary neon-text-glow">₦{product.price.toLocaleString()}</div>
+
+                  <div className="flex gap-4 items-center">
+                    <Link href={`/products/${product.id}`} className="flex-1">
+                      <Button className="w-full h-11 rounded-2xl bg-primary/20 hover:bg-primary/30 border border-primary/40 text-xs font-bold text-white transition-all shadow-[0_0_15px_rgba(239,26,184,0.2)]">
+                        View Details
+                      </Button>
+                    </Link>
+                    <Button variant="outline" className="h-11 rounded-2xl bg-white/5 border-white/10 text-[10px] font-bold px-4">
+                      Add to Cart
+                    </Button>
+                  </div>
                 </div>
                 
-                <div className="flex flex-wrap gap-2">
-                  {product.tags.map((tag, i) => (
-                    <Badge key={i} className="bg-primary/10 text-primary border-none px-3 py-0.5 text-[8px] font-bold flex gap-1 items-center rounded-lg">
-                      {tag === "Fast Food" ? <Zap className="w-2 h-2" /> : <MapPin className="w-2 h-2" />} {tag}
-                    </Badge>
-                  ))}
+                <div className="relative w-full md:w-[45%] aspect-square md:aspect-auto bg-white/5">
+                  <Image 
+                    src={product.imageUrl || `https://picsum.photos/seed/${product.id}/400/400`} 
+                    alt={product.name} 
+                    fill 
+                    className="object-cover transition-transform duration-700 group-hover:scale-105" 
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-r from-background via-transparent to-transparent hidden md:block" />
                 </div>
-
-                <div className="flex items-end gap-2">
-                   <div className="text-lg font-headline font-bold">₦{product.price.toFixed(2)}</div>
-                   {product.promo && <span className="text-[10px] text-primary font-bold mb-1">{product.promo}</span>}
-                </div>
-
-                <div className="flex gap-4 items-center">
-                  <Link href={`/products/${product.id}`} className="flex-1">
-                    <Button className="w-full h-11 rounded-2xl bg-primary/20 hover:bg-primary/30 border border-primary/40 text-xs font-bold text-white transition-all shadow-[0_0_15px_rgba(239,26,184,0.2)]">
-                      View Details
-                    </Button>
-                  </Link>
-                  <Button variant="outline" className="h-11 rounded-2xl bg-white/5 border-white/10 text-[10px] font-bold px-4 flex gap-2">
-                    Add to Cart <ChevronDown className="w-3 h-3" />
-                  </Button>
-                </div>
-              </div>
-              
-              <div className="relative w-full md:w-[45%] aspect-square md:aspect-auto">
-                <Image 
-                  src={product.image} 
-                  alt={product.name} 
-                  fill 
-                  className="object-cover transition-transform duration-700 group-hover:scale-105" 
-                  data-ai-hint="food item"
-                />
-                <div className="absolute inset-0 bg-gradient-to-r from-background via-transparent to-transparent hidden md:block" />
-                <div className="absolute bottom-4 right-4 flex items-center gap-1.5 text-rose-400">
-                   <Heart className="w-3 h-3 fill-rose-400" />
-                   <span className="text-[10px] font-bold">{product.rating}</span>
-                </div>
-              </div>
-            </GlassCard>
-          ))}
-        </div>
-
-        {/* Drinks Section */}
-        <div className="space-y-6 pt-8">
-          <div className="flex justify-between items-center">
-             <h2 className="text-2xl font-headline font-bold">Drinks</h2>
-             <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Showing 1 to 4 of 6 items <span className="text-primary">+</span></p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-             {drinks.map((drink, i) => (
-               <GlassCard key={i} className="p-0 border-white/10 group overflow-hidden flex flex-col hover:border-primary/30">
-                  <div className="p-6 flex items-center justify-between">
-                     <div className="space-y-1">
-                        <h4 className="text-sm font-bold group-hover:text-primary transition-colors">{drink.name}</h4>
-                        <p className="text-xs text-primary font-bold">₦{drink.price.toFixed(2)}</p>
-                     </div>
-                     <button className="text-muted-foreground hover:text-rose-500">
-                        <Heart className="w-4 h-4" />
-                     </button>
-                  </div>
-                  <div className="relative aspect-video overflow-hidden">
-                     <Image 
-                      src={drink.image} 
-                      alt={drink.name} 
-                      fill 
-                      className="object-cover group-hover:scale-110 transition-transform duration-500"
-                      data-ai-hint="drink"
-                     />
-                  </div>
-               </GlassCard>
-             ))}
-          </div>
-        </div>
-
-        {/* Bottom Navigation */}
-        <div className="flex justify-center pt-12 pb-8">
-           <GlassCard className="inline-flex gap-8 px-10 py-3 rounded-full border-white/5 bg-white/5 backdrop-blur-3xl">
-              {[
-                { label: "Burger", id: "burger", icon: ShoppingBag },
-                { label: "Pizza", id: "praza", icon: Zap },
-                { label: "Books", id: "books", icon: Clock },
-                { label: "Stationery", id: "satlons", icon: MapPin },
-                { label: "Stainery", id: "stainery", icon: Star }
-              ].map((nav, i) => (
-                <div key={i} className="flex flex-col items-center gap-1 group cursor-pointer opacity-60 hover:opacity-100 transition-opacity">
-                   <div className="w-8 h-8 rounded-lg flex items-center justify-center border border-white/10">
-                      <nav.icon className="w-4 h-4" />
-                   </div>
-                   <span className="text-[8px] font-bold uppercase tracking-widest">{nav.label}</span>
-                </div>
-              ))}
-           </GlassCard>
+              </GlassCard>
+            ))
+          ) : (
+            <div className="col-span-full py-20 text-center space-y-4">
+              <Package className="w-12 h-12 text-muted-foreground/20 mx-auto" />
+              <p className="text-muted-foreground">This vendor hasn't listed any products yet.</p>
+            </div>
+          )}
         </div>
 
       </div>
