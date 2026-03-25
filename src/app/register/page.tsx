@@ -26,7 +26,7 @@ import {
   Loader2
 } from "lucide-react"
 import { createUserWithEmailAndPassword } from 'firebase/auth'
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { doc, setDoc } from 'firebase/firestore'
 import { useAuth, useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase'
 
 export default function RegisterPage() {
@@ -90,46 +90,40 @@ export default function RegisterPage() {
         updatedAt: new Date().toISOString()
       }
 
-      // 3. Write to Firestore userProfiles collection
-      // Document path: /userProfiles/{uid}
+      // 3. Write to Firestore userProfiles collection (Non-blocking)
       const profileRef = doc(db, "userProfiles", user.uid)
       
-      // We use setDoc and handle the success/error explicitly
-      await setDoc(profileRef, profileData)
-
-      toast({
-        title: "Account Created!",
-        description: `Welcome to CampusSpend, ${formData.fullName}.`
-      })
-
-      // 4. Redirect based on role
-      if (formData.role === 'student') {
-        router.push("/dashboard")
-      } else {
-        router.push("/vendor/dashboard")
-      }
+      setDoc(profileRef, profileData)
+        .then(() => {
+          toast({
+            title: "Account Created!",
+            description: `Welcome to CampusSpend, ${formData.fullName}.`
+          })
+          // Redirect immediately using local cache update
+          if (formData.role === 'student') {
+            router.push("/dashboard")
+          } else {
+            router.push("/vendor/dashboard")
+          }
+        })
+        .catch(async (error) => {
+          const permissionError = new FirestorePermissionError({
+            path: profileRef.path,
+            operation: 'create',
+            requestResourceData: profileData,
+          })
+          errorEmitter.emit('permission-error', permissionError)
+          setLoading(false)
+        })
 
     } catch (error: any) {
-      console.error("Registration error:", error)
-      
-      // If the error was from Firestore permission, we construct our contextual error
-      if (error.code === 'permission-denied') {
-        const profileRef = doc(db, "userProfiles", "unknown") // path logic
-        const permissionError = new FirestorePermissionError({
-          path: `userProfiles/${auth.currentUser?.uid}`,
-          operation: 'create',
-          requestResourceData: { name: formData.fullName, role: formData.role },
-        })
-        errorEmitter.emit('permission-error', permissionError)
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Registration Failed",
-          description: error.message || "An unexpected error occurred during registration."
-        })
-      }
-    } finally {
+      console.error("Auth error:", error)
       setLoading(false)
+      toast({
+        variant: "destructive",
+        title: "Registration Failed",
+        description: error.message || "An unexpected error occurred during registration."
+      })
     }
   }
 

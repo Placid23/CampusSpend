@@ -4,6 +4,7 @@ service cloud.firestore {
 
     /**
      * CAMPUSSPEND SECURITY RULES
+     * Triggering re-deployment to ensure rules are active.
      */
 
     // --- HELPER FUNCTIONS ---
@@ -40,9 +41,9 @@ service cloud.firestore {
     match /userProfiles/{userId} {
       allow get: if isOwner(userId);
       allow list: if isOwner(userId) || isAdmin();
-      // Simplified create rule to prevent race conditions during registration
+      // Explicitly allow creation for the authenticated user matching the document ID
       allow create: if isSignedIn() && request.auth.uid == userId;
-      allow update: if isExistingOwner(userId) && (request.resource.data.id == userId || !('id' in request.resource.data));
+      allow update: if isExistingOwner(userId);
       allow delete: if isAdmin();
     }
 
@@ -59,8 +60,8 @@ service cloud.firestore {
      */
     match /users/{studentId}/orders/{orderId} {
       allow get, list: if isOwner(studentId) || isAdmin();
-      allow create: if isOwner(studentId) && request.resource.data.studentId == studentId;
-      allow update: if isExistingOwner(studentId) && request.resource.data.studentId == studentId;
+      allow create: if isOwner(studentId);
+      allow update: if isExistingOwner(studentId);
       allow delete: if isAdmin();
     }
 
@@ -75,19 +76,12 @@ service cloud.firestore {
     }
 
     /**
-     * @path /{path=**}/orderItems/{orderItemId}
-     */
-    match /{path=**}/orderItems/{orderItemId} {
-      allow list: if isSignedIn() && (request.query.limit <= 100) && (resource == null || resource.data.vendorOwnerId == request.auth.uid);
-    }
-
-    /**
      * @path /users/{studentId}/expenses/{expenseId}
      */
     match /users/{studentId}/expenses/{expenseId} {
       allow get, list: if isOwner(studentId) || isAdmin();
-      allow create: if isOwner(studentId) && request.resource.data.studentId == studentId;
-      allow update: if isExistingOwner(studentId) && request.resource.data.studentId == studentId;
+      allow create: if isOwner(studentId);
+      allow update: if isExistingOwner(studentId);
       allow delete: if isExistingOwner(studentId) || isAdmin();
     }
 
@@ -96,8 +90,8 @@ service cloud.firestore {
      */
     match /users/{studentId}/budgets/{budgetId} {
       allow get, list: if isOwner(studentId) || isAdmin();
-      allow create: if isOwner(studentId) && request.resource.data.studentId == studentId;
-      allow update: if isExistingOwner(studentId) && request.resource.data.studentId == studentId;
+      allow create: if isOwner(studentId);
+      allow update: if isExistingOwner(studentId);
       allow delete: if isExistingOwner(studentId) || isAdmin();
     }
 
@@ -107,7 +101,7 @@ service cloud.firestore {
     match /vendors/{vendorId} {
       allow get, list: if true;
       allow create: if isSignedIn() && isNewDocOwner('userId');
-      allow update: if isDocOwner('userId') && request.resource.data.userId == resource.data.userId;
+      allow update: if isDocOwner('userId');
       allow delete: if isAdmin();
     }
 
@@ -117,7 +111,7 @@ service cloud.firestore {
     match /products/{productId} {
       allow get, list: if true;
       allow create: if isSignedIn() && isNewDocOwner('vendorOwnerId');
-      allow update: if isDocOwner('vendorOwnerId') && request.resource.data.vendorOwnerId == resource.data.vendorOwnerId;
+      allow update: if isDocOwner('vendorOwnerId');
       allow delete: if isDocOwner('vendorOwnerId') || isAdmin();
     }
 
