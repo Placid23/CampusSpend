@@ -2,7 +2,7 @@
 "use client"
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { GlassCard } from "@/components/ui/glass-card"
@@ -20,46 +20,24 @@ import {
   Loader2
 } from "lucide-react"
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth'
-import { doc, getDoc } from 'firebase/firestore'
-import { useAuth, useFirestore } from '@/firebase'
+import { useAuth, useUser } from '@/firebase'
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  
   const router = useRouter()
   const { toast } = useToast()
   const auth = useAuth()
-  const db = useFirestore()
+  const { user, profile, isProfileLoading, profileError } = useUser()
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-
-    try {
-      // 1. Sign in with Firebase Auth
-      const userCredential = await signInWithEmailAndPassword(auth, email, password)
-      const user = userCredential.user
-
-      // 2. Fetch the user's role and profile from Firestore
-      const profileRef = doc(db, "userProfiles", user.uid)
-      const profileSnap = await getDoc(profileRef)
-
-      if (!profileSnap.exists()) {
-        // Safety check: Auth exists but profile doesn't
-        await signOut(auth)
-        toast({
-          variant: "destructive",
-          title: "Account Error",
-          description: "User profile data not found. Please contact support.",
-        })
-        return
-      }
-
-      const role = profileSnap.data().role
-
-      // 3. Redirect based on role
+  // Use an effect to handle redirection once the profile is loaded via global context
+  useEffect(() => {
+    if (user && profile && !isProfileLoading) {
+      const role = profile.role
+      
       if (role === 'student') {
         router.push("/dashboard")
       } else if (role === 'vendor') {
@@ -67,19 +45,42 @@ export default function LoginPage() {
       } else if (role === 'admin') {
         router.push("/admin/dashboard")
       } else {
-        await signOut(auth)
+        signOut(auth)
         toast({
           variant: "destructive",
           title: "Access Denied",
           description: "Unauthorized role detected.",
         })
+        return
       }
 
       toast({
         title: "Welcome back!",
         description: `Successfully logged in as ${role}.`,
       })
+    }
+  }, [user, profile, isProfileLoading, router, auth, toast])
 
+  // Handle errors from the global profile listener (e.g. user exists but profile doc is missing)
+  useEffect(() => {
+    if (user && profileError) {
+      signOut(auth)
+      toast({
+        variant: "destructive",
+        title: "Account Error",
+        description: "User profile data not found or inaccessible. Please contact support.",
+      })
+    }
+  }, [user, profileError, auth, toast])
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+
+    try {
+      // Sign in with Firebase Auth. 
+      // The redirection is handled by the useEffect above once the profile is synced.
+      await signInWithEmailAndPassword(auth, email, password)
     } catch (error: any) {
       console.error("Login error:", error)
       toast({
@@ -87,7 +88,6 @@ export default function LoginPage() {
         title: "Login Failed",
         description: error.message || "Invalid email or password.",
       })
-    } finally {
       setLoading(false)
     }
   }
