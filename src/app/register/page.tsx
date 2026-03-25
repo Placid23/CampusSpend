@@ -26,7 +26,7 @@ import {
   Loader2
 } from "lucide-react"
 import { createUserWithEmailAndPassword } from 'firebase/auth'
-import { doc, setDoc } from 'firebase/firestore'
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { useAuth, useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase'
 
 export default function RegisterPage() {
@@ -77,7 +77,7 @@ export default function RegisterPage() {
       )
       const user = userCredential.user
 
-      // 2. Prepare profile data for Firestore
+      // 2. Prepare profile data
       const profileData = {
         id: user.uid,
         firebaseUid: user.uid,
@@ -90,19 +90,21 @@ export default function RegisterPage() {
         updatedAt: new Date().toISOString()
       }
 
-      // 3. Write to Firestore userProfiles collection (Non-blocking)
+      // 3. Create the profile document
       const profileRef = doc(db, "userProfiles", user.uid)
       
+      // Use standard setDoc without await for non-blocking pattern
       setDoc(profileRef, profileData)
         .then(() => {
           toast({
             title: "Account Created!",
             description: `Welcome to CampusSpend, ${formData.fullName}.`
           })
-          // Redirect immediately using local cache update
+          // Redirection happens automatically via Shell guards or manual push
           if (formData.role === 'student') {
             router.push("/dashboard")
           } else {
+            // Vendors might need to create a Vendor record too, but let's get them to dashboard first
             router.push("/vendor/dashboard")
           }
         })
@@ -129,7 +131,6 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen nebula-bg flex flex-col font-body">
-      {/* Header Navigation */}
       <nav className="w-full z-50 py-6 px-6 md:px-12 flex justify-between items-center">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-[0_0_15px_rgba(239,26,184,0.5)]">
@@ -144,7 +145,6 @@ export default function RegisterPage() {
         </div>
       </nav>
 
-      {/* Main Content */}
       <main className="flex-1 flex items-center justify-center px-6 py-12">
         <div className="max-w-6xl w-full grid lg:grid-cols-2 gap-12 items-center">
           
@@ -167,8 +167,8 @@ export default function RegisterPage() {
 
               <div className="flex flex-col items-center text-center space-y-3 mb-10 pt-2">
                 <h2 className="text-3xl font-headline font-bold tracking-tight text-white">Sign Up</h2>
-                <p className="text-sm text-muted-foreground max-w-[280px]">
-                  Create your account to start ordering and tracking expenses.
+                <p className="text-sm text-muted-foreground">
+                  Create your account to start ordering.
                 </p>
               </div>
 
@@ -268,7 +268,7 @@ export default function RegisterPage() {
 
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground">
-                    Already have an account? <Link href="/login" className="text-foreground font-bold hover:text-primary transition-colors text-white">Log in</Link>
+                    Already have an account? <Link href="/login" className="text-white font-bold hover:text-primary transition-colors">Log in</Link>
                   </p>
                 </div>
               </form>

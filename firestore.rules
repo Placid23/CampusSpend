@@ -3,8 +3,8 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * CAMPUSSPEND SECURITY RULES
-     * Triggering re-deployment to ensure rules are active.
+     * CAMPUSSPEND SECURITY RULES - UPDATED
+     * Optimized for high-fidelity role-based access.
      */
 
     // --- HELPER FUNCTIONS ---
@@ -17,33 +17,22 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    function isExistingOwner(userId) {
-      return resource != null && isOwner(userId);
-    }
-
     function isAdmin() {
       return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
-    }
-
-    function isDocOwner(ownerField) {
-      return isSignedIn() && request.auth.uid == resource.data[ownerField];
-    }
-
-    function isNewDocOwner(ownerField) {
-      return isSignedIn() && request.auth.uid == request.resource.data[ownerField];
     }
 
     // --- COLLECTION RULES ---
 
     /**
      * @path /userProfiles/{userId}
+     * Stores core student/vendor profile data.
      */
     match /userProfiles/{userId} {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId) || isAdmin();
-      // Explicitly allow creation for the authenticated user matching the document ID
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+      // Allow creation if the user is signed in and the ID matches their Auth UID
       allow create: if isSignedIn() && request.auth.uid == userId;
-      allow update: if isExistingOwner(userId);
+      allow update: if isOwner(userId);
       allow delete: if isAdmin();
     }
 
@@ -56,71 +45,42 @@ service cloud.firestore {
     }
 
     /**
-     * @path /users/{studentId}/orders/{orderId}
+     * @path /vendors/{vendorId}
+     * Publicly readable, writeable only by the owner.
      */
-    match /users/{studentId}/orders/{orderId} {
-      allow get, list: if isOwner(studentId) || isAdmin();
-      allow create: if isOwner(studentId);
-      allow update: if isExistingOwner(studentId);
+    match /vendors/{vendorId} {
+      allow read: if true;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
       allow delete: if isAdmin();
     }
 
     /**
-     * @path /users/{studentId}/orders/{orderId}/orderItems/{orderItemId}
+     * @path /products/{productId}
+     * Publicly readable, managed by vendor owners.
      */
-    match /users/{studentId}/orders/{orderId}/orderItems/{orderItemId} {
-      allow get, list: if isOwner(studentId) || isAdmin() || (isSignedIn() && resource.data.vendorOwnerId == request.auth.uid);
+    match /products/{productId} {
+      allow read: if true;
+      allow create: if isSignedIn() && request.resource.data.vendorOwnerId == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.vendorOwnerId == request.auth.uid;
+      allow delete: if (isSignedIn() && resource.data.vendorOwnerId == request.auth.uid) || isAdmin();
+    }
+
+    /**
+     * @path /users/{studentId}/orders/{orderId}
+     */
+    match /users/{studentId}/orders/{orderId} {
+      allow read: if isOwner(studentId) || isAdmin();
       allow create: if isOwner(studentId);
-      allow update: if isExistingOwner(studentId) || isAdmin();
-      allow delete: if isAdmin();
+      allow update: if isOwner(studentId) || isAdmin();
     }
 
     /**
      * @path /users/{studentId}/expenses/{expenseId}
      */
     match /users/{studentId}/expenses/{expenseId} {
-      allow get, list: if isOwner(studentId) || isAdmin();
+      allow read: if isOwner(studentId) || isAdmin();
       allow create: if isOwner(studentId);
-      allow update: if isExistingOwner(studentId);
-      allow delete: if isExistingOwner(studentId) || isAdmin();
-    }
-
-    /**
-     * @path /users/{studentId}/budgets/{budgetId}
-     */
-    match /users/{studentId}/budgets/{budgetId} {
-      allow get, list: if isOwner(studentId) || isAdmin();
-      allow create: if isOwner(studentId);
-      allow update: if isExistingOwner(studentId);
-      allow delete: if isExistingOwner(studentId) || isAdmin();
-    }
-
-    /**
-     * @path /vendors/{vendorId}
-     */
-    match /vendors/{vendorId} {
-      allow get, list: if true;
-      allow create: if isSignedIn() && isNewDocOwner('userId');
-      allow update: if isDocOwner('userId');
-      allow delete: if isAdmin();
-    }
-
-    /**
-     * @path /products/{productId}
-     */
-    match /products/{productId} {
-      allow get, list: if true;
-      allow create: if isSignedIn() && isNewDocOwner('vendorOwnerId');
-      allow update: if isDocOwner('vendorOwnerId');
-      allow delete: if isDocOwner('vendorOwnerId') || isAdmin();
-    }
-
-    /**
-     * @path /categories/{categoryId}
-     */
-    match /categories/{categoryId} {
-      allow get, list: if true;
-      allow create, update, delete: if isAdmin();
     }
   }
 }
