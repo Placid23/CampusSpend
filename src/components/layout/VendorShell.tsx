@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -17,7 +16,8 @@ import {
   LogOut, 
   ChevronRight,
   Bell,
-  Search
+  Search,
+  Loader2
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -49,11 +49,40 @@ export function VendorShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
   const auth = useAuth()
-  const { user } = useUser()
+  const { user, isUserLoading, profile, isProfileLoading } = useUser()
+
+  // Route Guard: Only vendors can access this shell
+  React.useEffect(() => {
+    if (!isUserLoading && !isProfileLoading) {
+      if (!user) {
+        router.push("/login")
+      } else if (profile && profile.role !== 'vendor') {
+        if (profile.role === 'student') router.push("/dashboard")
+        if (profile.role === 'admin') router.push("/admin/dashboard")
+      }
+    }
+  }, [user, isUserLoading, profile, isProfileLoading, router])
 
   const handleLogout = async () => {
     await signOut(auth)
     router.push("/login")
+  }
+
+  // Show loading state
+  if (isUserLoading || isProfileLoading) {
+    return (
+      <div className="min-h-screen nebula-bg flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-12 h-12 text-primary animate-spin" />
+          <p className="text-muted-foreground font-bold uppercase tracking-widest text-xs">Authenticating Vendor...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Authorization check
+  if (!user || profile?.role !== 'vendor') {
+    return null
   }
 
   return (
@@ -118,10 +147,10 @@ export function VendorShell({ children }: { children: React.ReactNode }) {
                 <div className="flex items-center gap-4 group cursor-pointer">
                   <Avatar className="w-10 h-10 border-2 border-primary/20 group-hover:border-primary transition-colors">
                     <AvatarImage src={`https://picsum.photos/seed/${user?.uid || 'vendor'}/100/100`} />
-                    <AvatarFallback>QF</AvatarFallback>
+                    <AvatarFallback>{profile?.name?.charAt(0) || 'V'}</AvatarFallback>
                   </Avatar>
                   <div className="text-right hidden sm:block">
-                    <p className="text-sm font-bold tracking-wide text-white">Vendor</p>
+                    <p className="text-sm font-bold tracking-wide text-white">{profile?.name || 'Vendor'}</p>
                     <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">{user?.email}</p>
                   </div>
                 </div>

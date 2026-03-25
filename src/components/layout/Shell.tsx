@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -14,7 +13,8 @@ import {
   CreditCard,
   ShoppingCart,
   History,
-  Menu
+  Menu,
+  Loader2
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -48,11 +48,41 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
   const auth = useAuth()
-  const { user } = useUser()
+  const { user, isUserLoading, profile, isProfileLoading } = useUser()
+
+  // Route Guard: Only students can access this shell
+  React.useEffect(() => {
+    if (!isUserLoading && !isProfileLoading) {
+      if (!user) {
+        router.push("/login")
+      } else if (profile && profile.role !== 'student') {
+        // Redirect to appropriate dashboard if role doesn't match
+        if (profile.role === 'vendor') router.push("/vendor/dashboard")
+        if (profile.role === 'admin') router.push("/admin/dashboard")
+      }
+    }
+  }, [user, isUserLoading, profile, isProfileLoading, router])
 
   const handleLogout = async () => {
     await signOut(auth)
     router.push("/login")
+  }
+
+  // Show loading state while checking auth/profile
+  if (isUserLoading || isProfileLoading) {
+    return (
+      <div className="min-h-screen nebula-bg flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-12 h-12 text-primary animate-spin" />
+          <p className="text-muted-foreground font-bold uppercase tracking-widest text-xs">Authenticating...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Final check to prevent render if not authorized
+  if (!user || profile?.role !== 'student') {
+    return null
   }
 
   return (
@@ -139,13 +169,13 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                     <AvatarFallback>{user?.email?.charAt(0).toUpperCase() || 'S'}</AvatarFallback>
                   </Avatar>
                   <div className="text-right hidden sm:block">
-                    <p className="text-sm font-bold tracking-wide">{user?.displayName || 'Student'}</p>
+                    <p className="text-sm font-bold tracking-wide">{profile?.name || 'Student'}</p>
                     <p className="text-[10px] text-muted-foreground font-medium uppercase truncate max-w-[100px]">{user?.email}</p>
                   </div>
                 </div>
                 <div className="h-9 md:h-10 px-4 md:px-6 rounded-xl md:rounded-2xl bg-white/5 border border-white/10 flex items-center gap-2 md:gap-3 shadow-inner">
                    <span className="text-[8px] md:text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Rs.</span>
-                   <span className="text-xs md:text-sm font-headline font-bold text-primary">53.62</span>
+                   <span className="text-xs md:text-sm font-headline font-bold text-primary">{profile?.walletBalance?.toLocaleString() || '0'}</span>
                 </div>
               </div>
             </header>
