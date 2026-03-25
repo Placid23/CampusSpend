@@ -2,11 +2,6 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    /**
-     * CAMPUSSPEND SECURITY RULES - UPDATED
-     * Optimized for high-fidelity role-based access.
-     */
-
     // --- HELPER FUNCTIONS ---
 
     function isSignedIn() {
@@ -25,28 +20,24 @@ service cloud.firestore {
 
     /**
      * @path /userProfiles/{userId}
-     * Stores core student/vendor profile data.
      */
     match /userProfiles/{userId} {
+      // Allow creation if the user is signing up as themselves
+      // We check the ID matches and the role is valid.
+      allow create: if isOwner(userId) 
+        && request.resource.data.role in ['student', 'vendor'];
+      
+      // Owners and Admins can read/update profiles
       allow get: if isOwner(userId) || isAdmin();
-      allow list: if isAdmin();
-      // Allow creation if the user is signed in and the ID matches their Auth UID
-      allow create: if isSignedIn() && request.auth.uid == userId;
       allow update: if isOwner(userId);
-      allow delete: if isAdmin();
-    }
-
-    /**
-     * @path /roles_admin/{userId}
-     */
-    match /roles_admin/{userId} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
+      
+      // Only admins can list all users or delete them
+      allow list, delete: if isAdmin();
     }
 
     /**
      * @path /vendors/{vendorId}
-     * Publicly readable, writeable only by the owner.
+     * Publicly readable, writeable only by the vendor owner.
      */
     match /vendors/{vendorId} {
       allow read: if true;
@@ -68,19 +59,33 @@ service cloud.firestore {
 
     /**
      * @path /users/{studentId}/orders/{orderId}
+     * Path-based ownership for orders.
      */
     match /users/{studentId}/orders/{orderId} {
-      allow read: if isOwner(studentId) || isAdmin();
-      allow create: if isOwner(studentId);
-      allow update: if isOwner(studentId) || isAdmin();
+      allow read, write: if isOwner(studentId) || isAdmin();
     }
 
     /**
      * @path /users/{studentId}/expenses/{expenseId}
+     * Path-based ownership for expense tracking.
      */
     match /users/{studentId}/expenses/{expenseId} {
-      allow read: if isOwner(studentId) || isAdmin();
-      allow create: if isOwner(studentId);
+      allow read, write: if isOwner(studentId) || isAdmin();
+    }
+
+    /**
+     * @path /users/{studentId}/budgets/{budgetId}
+     */
+    match /users/{studentId}/budgets/{budgetId} {
+      allow read, write: if isOwner(studentId) || isAdmin();
+    }
+
+    /**
+     * @path /roles_admin/{userId}
+     */
+    match /roles_admin/{userId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
     }
   }
 }
