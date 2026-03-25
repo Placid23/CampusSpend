@@ -16,11 +16,11 @@ service cloud.firestore {
 
     /**
      * @path /userProfiles/{uid}
-     * Users manage their own profile. Wallet balance and budget are stored here.
+     * Users manage their own profile. Publicly readable so others can see names.
      */
     match /userProfiles/{uid} {
       allow create: if isOwner(uid);
-      allow read: if signedIn(); // Allow others to read name for vendor/order context
+      allow read: if signedIn();
       allow update: if isOwner(uid);
     }
 
@@ -36,7 +36,7 @@ service cloud.firestore {
 
     /**
      * @path /products/{productId}
-     * Publicly readable. Managed by vendors.
+     * Publicly readable for marketplace. Managed by vendors.
      */
     match /products/{productId} {
       allow read: if signedIn();
@@ -67,6 +67,7 @@ service cloud.firestore {
 
     /**
      * @path /users/{studentId}/expenses/{expenseId}
+     * Only the student can see their own expenses.
      */
     match /users/{studentId}/expenses/{expenseId} {
       allow read, write: if isOwner(studentId);
