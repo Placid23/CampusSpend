@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -33,7 +32,7 @@ import {
 import Image from "next/image"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
-import { collection, query, where, orderBy } from 'firebase/firestore'
+import { collection, query, where } from 'firebase/firestore'
 import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase'
 
 export default function ManageProductsPage() {
@@ -42,10 +41,10 @@ export default function ManageProductsPage() {
 
   const productsQuery = useMemoFirebase(() => {
     if (!user) return null
+    // Simple query without ordering to avoid immediate need for composite indexes
     return query(
       collection(db, "products"),
-      where("vendorOwnerId", "==", user.uid),
-      orderBy("createdAt", "desc")
+      where("vendorOwnerId", "==", user.uid)
     )
   }, [db, user])
 
@@ -106,17 +105,17 @@ export default function ManageProductsPage() {
                             <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">{item.category}</span>
                           </div>
                         </TableCell>
-                        <TableCell className="text-sm font-bold text-white/80">₦{item.price}</TableCell>
+                        <TableCell className="text-sm font-bold text-white/80">₦{item.price.toLocaleString()}</TableCell>
                         <TableCell className="text-sm font-bold text-white/80">{item.stock}</TableCell>
                         <TableCell>
                           <div className="flex justify-center">
                             <div className={cn(
                               "px-5 py-1.5 rounded-full border text-[10px] font-bold uppercase tracking-widest",
-                              item.stock <= item.lowStockThreshold 
+                              item.stock <= (item.lowStockThreshold || 0)
                                 ? "bg-amber-500/10 border-amber-500/20 text-amber-400"
                                 : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
                             )}>
-                              {item.stock <= 0 ? "Out of Stock" : item.stock <= item.lowStockThreshold ? "Low Stock" : "Active"}
+                              {item.stock <= 0 ? "Out of Stock" : item.stock <= (item.lowStockThreshold || 0) ? "Low Stock" : "Active"}
                             </div>
                           </div>
                         </TableCell>
@@ -147,7 +146,7 @@ export default function ManageProductsPage() {
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-bold text-muted-foreground">Low Stock</span>
                   <span className="text-lg font-bold text-amber-500">
-                    {products?.filter(p => p.stock <= p.lowStockThreshold && p.stock > 0).length || 0}
+                    {products?.filter(p => p.stock <= (p.lowStockThreshold || 0) && p.stock > 0).length || 0}
                   </span>
                 </div>
               </div>

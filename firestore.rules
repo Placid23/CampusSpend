@@ -3,7 +3,6 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // --- HELPER FUNCTIONS ---
-
     function signedIn() {
       return request.auth != null;
     }
@@ -16,68 +15,62 @@ service cloud.firestore {
 
     /**
      * @path /userProfiles/{uid}
-     * Users manage their own profile. Publicly readable so others can see names.
+     * Users can manage their own profile.
      */
     match /userProfiles/{uid} {
-      allow create: if isOwner(uid);
-      allow read: if signedIn();
-      allow update: if isOwner(uid);
+      allow read, write: if isOwner(uid);
     }
 
     /**
      * @path /vendors/{vendorId}
-     * Publicly readable. Managed by vendor users.
+     * Publicly readable by students. Managed by vendor users.
      */
     match /vendors/{vendorId} {
       allow read: if signedIn();
-      allow create: if signedIn() && isOwner(request.resource.data.userId);
-      allow update: if signedIn() && isOwner(resource.data.userId);
+      allow write: if signedIn() && (
+        (request.method == 'create' && request.resource.data.userId == request.auth.uid) ||
+        (resource.data.userId == request.auth.uid)
+      );
     }
 
     /**
      * @path /products/{productId}
-     * Publicly readable for marketplace. Managed by vendors.
+     * Marketplace is public to all students. Vendors manage their own.
      */
     match /products/{productId} {
       allow read: if signedIn();
-      allow create: if signedIn() && isOwner(request.resource.data.vendorOwnerId);
-      allow update: if signedIn() && isOwner(resource.data.vendorOwnerId);
-      allow delete: if signedIn() && isOwner(resource.data.vendorOwnerId);
+      allow write: if signedIn() && (
+        (request.method == 'create' && request.resource.data.vendorOwnerId == request.auth.uid) ||
+        (resource.data.vendorOwnerId == request.auth.uid)
+      );
     }
 
     /**
-     * @path /users/{studentId}/orders/{orderId}
-     * Path-based ownership for orders and their nested items.
+     * @path /users/{uid}/orders/{orderId}
+     * Student's private order collection.
      */
-    match /users/{studentId}/orders/{orderId} {
-      allow read, write: if isOwner(studentId);
+    match /users/{uid}/orders/{orderId} {
+      allow read, write: if isOwner(uid);
       
       match /orderItems/{itemId} {
-        allow read, write: if isOwner(studentId);
+        allow read, write: if isOwner(uid);
       }
     }
 
     /**
+     * @path /users/{uid}/expenses/{expenseId}
+     * Student's private spending log.
+     */
+    match /users/{uid}/expenses/{expenseId} {
+      allow read, write: if isOwner(uid);
+    }
+
+    /**
      * @path collectionGroup orderItems
-     * Allows vendors to see items belonging to them across all student orders.
+     * Allows vendors to see items belonging to them across student orders.
      */
     match /{path=**}/orderItems/{itemId} {
-      allow read: if signedIn() && isOwner(resource.data.vendorOwnerId);
-    }
-
-    /**
-     * @path /users/{studentId}/expenses/{expenseId}
-     * Only the student can see their own expenses.
-     */
-    match /users/{studentId}/expenses/{expenseId} {
-      allow read, write: if isOwner(studentId);
-    }
-
-    /**
-     * @path /categories/{categoryId}
-     */
-    match /categories/{categoryId} {
-      allow read: if signedIn();
+      allow read: if signedIn() && resource.data.vendorOwnerId == request.auth.uid;
     }
   }
 }
