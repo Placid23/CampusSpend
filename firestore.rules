@@ -69,13 +69,12 @@ service cloud.firestore {
 
     /**
      * @path collectionGroup orderItems
-     * This rule allows collection group queries for orderItems across all user paths.
-     * It is critical for Vendor Order Tracking.
+     * CRITICAL: This rule allows vendors to find their specific items across all student orders.
+     * The path=** allows it to match nested items in /users/{uid}/orders/{id}/orderItems
      */
     match /{path=**}/orderItems/{itemId} {
       allow list: if signedIn() && (
-        request.auth.uid == resource.data.vendorOwnerId || 
-        request.auth.uid == resource.data.studentId
+        request.auth.uid == resource.data.vendorOwnerId
       );
       allow get: if signedIn() && (
         resource.data.vendorOwnerId == request.auth.uid || 
