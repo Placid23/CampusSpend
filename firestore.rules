@@ -7,21 +7,16 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function isOwner(uid) {
-      return signedIn() && request.auth.uid == uid;
-    }
-
     // --- COLLECTION RULES ---
 
     /**
      * @path /userProfiles/{uid}
-     * Users manage their own profile. We allow broad read for role-checking
-     * but restrict writes strictly to the owner.
+     * Users manage their own profile.
      */
     match /userProfiles/{uid} {
       allow read: if signedIn();
-      allow create: if isOwner(uid);
-      allow update: if isOwner(uid);
+      allow create: if signedIn() && request.auth.uid == uid;
+      allow update: if signedIn() && request.auth.uid == uid;
     }
 
     /**
@@ -30,10 +25,8 @@ service cloud.firestore {
      */
     match /vendors/{vendorId} {
       allow read: if signedIn();
-      allow write: if signedIn() && (
-        (request.method == 'create' && request.resource.data.userId == request.auth.uid) ||
-        (resource.data.userId == request.auth.uid)
-      );
+      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if signedIn() && resource.data.userId == request.auth.uid;
     }
 
     /**
@@ -42,38 +35,26 @@ service cloud.firestore {
      */
     match /products/{productId} {
       allow read: if signedIn();
-      allow write: if signedIn() && (
-        (request.method == 'create' && request.resource.data.vendorOwnerId == request.auth.uid) ||
-        (resource.data.vendorOwnerId == request.auth.uid)
-      );
+      allow create: if signedIn() && request.resource.data.vendorOwnerId == request.auth.uid;
+      allow update, delete: if signedIn() && resource.data.vendorOwnerId == request.auth.uid;
     }
 
     /**
-     * @path /users/{uid}/orders/{orderId}
-     * Private student orders and expenses.
+     * @path /users/{studentId}/*
+     * Private student data (orders, expenses, budgets).
      */
-    match /users/{uid}/orders/{orderId} {
-      allow read, write: if isOwner(uid);
-      
-      match /orderItems/{itemId} {
-        allow read, write: if isOwner(uid);
-      }
-    }
-
-    match /users/{uid}/expenses/{expenseId} {
-      allow read, write: if isOwner(uid);
+    match /users/{studentId}/{document=**} {
+      allow read, write: if signedIn() && request.auth.uid == studentId;
     }
 
     /**
      * @path collectionGroup orderItems
-     * CRITICAL: This rule enables vendors to query their specific sales across all student orders.
-     * The recursive match {path=**} is required for collectionGroup queries.
+     * CRITICAL: Enables vendors to query their specific sales across all orders.
+     * Use where("vendorOwnerId", "==", auth.uid) in the query.
      */
     match /{path=**}/orderItems/{itemId} {
       allow list: if signedIn() && (
-        // Access is granted if the vendorOwnerId in the document matches the logged-in user
         request.auth.uid == resource.data.vendorOwnerId ||
-        // Or if the studentId matches (for their own history)
         request.auth.uid == resource.data.studentId
       );
       allow get: if signedIn();
