@@ -15,7 +15,8 @@ service cloud.firestore {
 
     /**
      * @path /userProfiles/{uid}
-     * Users can manage their own profile.
+     * Users manage their own profile. We allow broad read for role-checking
+     * but restrict writes strictly to the owner.
      */
     match /userProfiles/{uid} {
       allow read: if signedIn();
@@ -25,7 +26,7 @@ service cloud.firestore {
 
     /**
      * @path /vendors/{vendorId}
-     * Publicly readable by students. Managed by vendor users.
+     * Marketplace discovery. Managed by vendor users.
      */
     match /vendors/{vendorId} {
       allow read: if signedIn();
@@ -37,10 +38,10 @@ service cloud.firestore {
 
     /**
      * @path /products/{productId}
-     * Marketplace is public. Vendors manage their own items.
+     * Marketplace products. Publicly readable, managed by vendors.
      */
     match /products/{productId} {
-      allow get, list: if signedIn();
+      allow read: if signedIn();
       allow write: if signedIn() && (
         (request.method == 'create' && request.resource.data.vendorOwnerId == request.auth.uid) ||
         (resource.data.vendorOwnerId == request.auth.uid)
@@ -49,7 +50,7 @@ service cloud.firestore {
 
     /**
      * @path /users/{uid}/orders/{orderId}
-     * Student's private order collection.
+     * Private student orders and expenses.
      */
     match /users/{uid}/orders/{orderId} {
       allow read, write: if isOwner(uid);
@@ -59,27 +60,23 @@ service cloud.firestore {
       }
     }
 
-    /**
-     * @path /users/{uid}/expenses/{expenseId}
-     * Student's private spending log.
-     */
     match /users/{uid}/expenses/{expenseId} {
       allow read, write: if isOwner(uid);
     }
 
     /**
      * @path collectionGroup orderItems
-     * CRITICAL: This rule allows vendors to find their specific items across all student orders.
-     * The path=** allows it to match nested items in /users/{uid}/orders/{id}/orderItems
+     * CRITICAL: This rule enables vendors to query their specific sales across all student orders.
+     * The recursive match {path=**} is required for collectionGroup queries.
      */
     match /{path=**}/orderItems/{itemId} {
       allow list: if signedIn() && (
-        request.auth.uid == resource.data.vendorOwnerId
+        // Access is granted if the vendorOwnerId in the document matches the logged-in user
+        request.auth.uid == resource.data.vendorOwnerId ||
+        // Or if the studentId matches (for their own history)
+        request.auth.uid == resource.data.studentId
       );
-      allow get: if signedIn() && (
-        resource.data.vendorOwnerId == request.auth.uid || 
-        resource.data.studentId == request.auth.uid
-      );
+      allow get: if signedIn();
     }
   }
 }
