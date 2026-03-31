@@ -14,17 +14,16 @@ service cloud.firestore {
     // --- COLLECTION RULES ---
 
     /**
-     * @path /userProfiles/{userId}
+     * User Profiles: Secure account data.
+     * Publicly visible so marketplace can show names, but only owner can edit.
      */
     match /userProfiles/{userId} {
-      allow get: if signedIn();
-      allow list: if signedIn(); 
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
+      allow get, list: if signedIn();
+      allow create, update: if isOwner(userId);
     }
 
     /**
-     * @path /vendors/{vendorId}
+     * Vendors: Store identity management.
      */
     match /vendors/{vendorId} {
       allow read: if signedIn();
@@ -33,7 +32,7 @@ service cloud.firestore {
     }
 
     /**
-     * @path /products/{productId}
+     * Products: Marketplace inventory.
      */
     match /products/{productId} {
       allow read: if signedIn();
@@ -42,18 +41,17 @@ service cloud.firestore {
     }
 
     /**
-     * @path /users/{studentId}/*
-     * Covers subcollections: orders, expenses, budgets
+     * User Private Branch: Orders, Expenses, Budgets.
+     * Path-based ownership ensures privacy.
      */
     match /users/{studentId}/{document=**} {
       allow read, write: if isOwner(studentId);
     }
 
     /**
-     * @path collectionGroup orderItems
-     * Rule overhaul for Collection Group security.
-     * We allow 'list' if signedIn, relying on the 'where' filter in the query
-     * to restrict access to the user's specific data (vendor or student).
+     * Order Items: Collection Group for Vendor Sales Tracking.
+     * Allows 'list' if signedIn, relying on frontend 'where' filters 
+     * to satisfy security constraints (query-as-filter).
      */
     match /{path=**}/orderItems/{itemId} {
       allow list: if signedIn();
