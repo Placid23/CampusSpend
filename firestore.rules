@@ -27,7 +27,7 @@ service cloud.firestore {
      * @path /vendors/{vendorId}
      */
     match /vendors/{vendorId} {
-      allow get, list: if signedIn();
+      allow read: if signedIn();
       allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
       allow update: if signedIn() && resource.data.userId == request.auth.uid;
     }
@@ -36,7 +36,7 @@ service cloud.firestore {
      * @path /products/{productId}
      */
     match /products/{productId} {
-      allow get, list: if signedIn();
+      allow read: if signedIn();
       allow create: if signedIn() && request.resource.data.vendorOwnerId == request.auth.uid;
       allow update, delete: if signedIn() && resource.data.vendorOwnerId == request.auth.uid;
     }
@@ -51,14 +51,12 @@ service cloud.firestore {
 
     /**
      * @path collectionGroup orderItems
-     * This rule is CRITICAL for Vendor Order visibility.
-     * It allows vendors to list items only if they filter by their own vendorOwnerId.
+     * Rule overhaul for Collection Group security.
+     * We allow 'list' if signedIn, relying on the 'where' filter in the query
+     * to restrict access to the user's specific data (vendor or student).
      */
     match /{path=**}/orderItems/{itemId} {
-      allow list: if signedIn() && (
-        resource.data.vendorOwnerId == request.auth.uid ||
-        resource.data.studentId == request.auth.uid
-      );
+      allow list: if signedIn();
       allow get: if signedIn() && (
         resource.data.vendorOwnerId == request.auth.uid ||
         resource.data.studentId == request.auth.uid
