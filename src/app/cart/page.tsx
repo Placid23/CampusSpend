@@ -9,7 +9,6 @@ import {
   Minus, 
   Plus, 
   Trash2, 
-  Zap, 
   ShoppingCart, 
   ShieldCheck, 
   Loader2
@@ -79,7 +78,7 @@ export default function CartPage() {
       studentId,
       orderDate: now,
       totalAmount: total,
-      status: "delivered",
+      status: "placed",
       itemCount: cart.length,
       createdAt: now,
       updatedAt: now
@@ -100,70 +99,56 @@ export default function CartPage() {
       updatedAt: now
     }
 
-    // 3. Prepare Wallet Update
-    const profileRef = doc(db, "userProfiles", studentId)
-    const newBalance = profile.walletBalance - total
-
-    // 4. Batch Operations (Non-blocking)
-    setDoc(orderRef, orderData).catch(err => {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: orderRef.path, operation: 'create', requestResourceData: orderData }))
-    })
-
-    // Write individual items for vendor visibility
-    cart.forEach(item => {
-      const itemRef = doc(collection(db, "users", studentId, "orders", orderId, "orderItems"))
-      const itemData = {
-        id: itemRef.id,
-        orderId,
-        studentId,
-        productId: item.id,
-        name: item.name,
-        quantity: item.quantity,
-        unitPrice: item.price,
-        subtotal: item.price * item.quantity,
-        vendorOwnerId: item.vendorOwnerId,
-        createdAt: now,
-        updatedAt: now
+    // 3. Batch Writes (Simplified)
+    try {
+      await setDoc(orderRef, orderData)
+      
+      // Write individual items for vendor visibility
+      for (const item of cart) {
+        const itemRef = doc(collection(db, "users", studentId, "orders", orderId, "orderItems"))
+        const itemData = {
+          id: itemRef.id,
+          orderId,
+          studentId,
+          productId: item.id,
+          name: item.name,
+          quantity: item.quantity,
+          unitPrice: item.price,
+          subtotal: item.price * item.quantity,
+          vendorOwnerId: item.vendorOwnerId,
+          status: "placed",
+          createdAt: now,
+          updatedAt: now
+        }
+        await setDoc(itemRef, itemData)
       }
-      setDoc(itemRef, itemData).catch(err => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: itemRef.path, operation: 'create', requestResourceData: itemData }))
+
+      await setDoc(expenseRef, expenseData)
+      await updateDoc(doc(db, "userProfiles", studentId), { 
+        walletBalance: profile.walletBalance - total,
+        updatedAt: now
       })
-    })
 
-    setDoc(expenseRef, expenseData).catch(err => {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: expenseRef.path, operation: 'create', requestResourceData: expenseData }))
-    })
-
-    updateDoc(profileRef, { 
-      walletBalance: newBalance,
-      updatedAt: now
-    }).catch(err => {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: profileRef.path, operation: 'update', requestResourceData: { walletBalance: newBalance } }))
-    })
-
-    toast({
-      title: "Payment Successful",
-      description: `₦${total.toLocaleString()} deducted from your wallet.`,
-    })
-
-    localStorage.removeItem('campus-spend-cart')
-    setTimeout(() => {
-      setIsProcessing(false)
+      localStorage.removeItem('campus-spend-cart')
+      toast({ title: "Order Placed!", description: "Funds deducted from your wallet." })
       router.push("/checkout")
-    }, 1000)
+    } catch (err) {
+      console.error(err)
+      toast({ variant: "destructive", title: "Checkout Error", description: "Something went wrong during payment." })
+    } finally {
+      setIsProcessing(false)
+    }
   }
 
   return (
     <DashboardShell>
       <div className="space-y-8 animate-in fade-in slide-in-from-bottom duration-700">
-        
         <div className="space-y-2">
           <h1 className="text-4xl font-headline font-bold">Your <span className="text-primary neon-text-glow">Tray</span></h1>
           <p className="text-muted-foreground text-sm">Review your selected items before checking out.</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
           <div className="lg:col-span-8 space-y-6">
             <GlassCard className="p-8 border-white/10">
               {cart.length === 0 ? (
@@ -173,10 +158,10 @@ export default function CartPage() {
                   </div>
                   <div className="space-y-2">
                     <h3 className="text-xl font-headline font-bold text-white">Your tray is empty</h3>
-                    <p className="text-muted-foreground">Add items from the marketplace to get started.</p>
+                    <p className="text-muted-foreground text-sm">Discover amazing vendors on campus.</p>
                   </div>
                   <Link href="/vendors">
-                    <Button variant="outline" className="rounded-xl border-white/10">Browse Vendors</Button>
+                    <Button variant="outline" className="rounded-xl border-white/10">Browse Marketplace</Button>
                   </Link>
                 </div>
               ) : (
@@ -186,13 +171,11 @@ export default function CartPage() {
                       <div className="relative w-24 h-24 rounded-2xl overflow-hidden shrink-0">
                         <Image src={item.imageUrl || `https://picsum.photos/seed/${item.id}/200/200`} alt={item.name} fill className="object-cover" />
                       </div>
-                      
                       <div className="flex-1 space-y-1 text-center md:text-left">
                         <h3 className="text-xl font-headline font-bold">{item.name}</h3>
                         <p className="text-xs text-muted-foreground uppercase font-bold tracking-widest">{item.category}</p>
                         <div className="text-lg font-bold pt-2">₦{item.price.toLocaleString()}</div>
                       </div>
-
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-4 bg-white/5 rounded-xl border border-white/10 p-1">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => updateQuantity(item.id, -1)}><Minus className="w-3 h-3" /></Button>
@@ -211,8 +194,7 @@ export default function CartPage() {
           {cart.length > 0 && (
             <div className="lg:col-span-4 space-y-6">
               <GlassCard className="p-8 border-white/10 space-y-8">
-                <h3 className="text-xl font-headline font-bold">Checkout Summary</h3>
-                
+                <h3 className="text-xl font-headline font-bold">Summary</h3>
                 <div className="space-y-4">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Subtotal</span>
@@ -227,27 +209,19 @@ export default function CartPage() {
                     <span className="font-bold">₦{deliveryFee.toLocaleString()}</span>
                   </div>
                 </div>
-
                 <div className="pt-6 border-t border-white/5 space-y-4">
                   <div className="flex justify-between items-center">
                     <span className="text-lg font-headline font-bold">Total</span>
                     <span className="text-2xl font-headline font-bold text-primary neon-text-glow">₦{total.toLocaleString()}</span>
                   </div>
-                  <div className="flex justify-between text-xs">
-                    <span className="text-muted-foreground">Wallet Balance</span>
-                    <span className={cn("font-bold", (profile?.walletBalance || 0) < total ? "text-rose-500" : "text-emerald-500")}>
-                      ₦{profile?.walletBalance?.toLocaleString() || '0'}
-                    </span>
-                  </div>
                 </div>
-
                 <Button 
                   disabled={isProcessing || (profile?.walletBalance || 0) < total}
                   onClick={handleCheckout}
-                  className="w-full h-14 rounded-2xl bg-gradient-to-r from-primary to-secondary text-base font-bold shadow-[0_0_30px_rgba(239,26,184,0.3)] hover:opacity-90 transition-all"
+                  className="w-full h-14 rounded-2xl bg-gradient-to-r from-primary to-secondary text-base font-bold shadow-[0_0_30px_rgba(239,26,184,0.3)]"
                 >
                   {isProcessing ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <ShieldCheck className="w-5 h-5 mr-2" />}
-                  {(profile?.walletBalance || 0) < total ? "Insufficient Balance" : "Pay from Wallet"}
+                  {(profile?.walletBalance || 0) < total ? "Insufficient Balance" : "Complete Order"}
                 </Button>
               </GlassCard>
             </div>

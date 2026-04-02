@@ -72,21 +72,15 @@ export default function DashboardPage() {
   return (
     <DashboardShell>
       <div className="space-y-8 animate-in fade-in slide-in-from-bottom duration-1000">
-        
-        {/* Main Grid Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
-          {/* Left/Center Content (8 cols) */}
           <div className="lg:col-span-8 space-y-8 order-2 lg:order-1">
-            
-            {/* Header / Welcome */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div className="space-y-2">
                 <h1 className="text-3xl md:text-4xl font-headline font-bold text-center md:text-left">
                   Welcome, <span className="text-primary neon-text-glow">{profile?.name || 'Student'}!</span>
                 </h1>
                 <p className="text-muted-foreground text-sm text-center md:text-left max-w-lg mx-auto md:mx-0">
-                  Manage your tray, track your Naira (₦) expenses, and stay within your budget.
+                  Track your Naira (₦) expenses and stay within your budget.
                 </p>
               </div>
               <Link href="/vendors" className="w-full md:w-auto">
@@ -96,7 +90,6 @@ export default function DashboardPage() {
               </Link>
             </div>
 
-            {/* Spending Cards */}
             <div className="space-y-6">
               <GlassCard className="bg-gradient-to-r from-card/80 to-primary/5 border-primary/20 p-6 md:p-8">
                 <div className="flex flex-col sm:flex-row justify-between items-center sm:items-end gap-4 mb-6 text-center sm:text-left">
@@ -111,10 +104,10 @@ export default function DashboardPage() {
                 </div>
                 <div className="space-y-4">
                   <div className="h-4 w-full bg-white/5 rounded-full overflow-hidden relative">
-                    <div className="h-full w-[100%] bg-gradient-to-r from-primary to-secondary absolute left-0 top-0 shadow-[0_0_20px_rgba(239,26,184,0.5)]"></div>
+                    <div className="h-full w-full bg-gradient-to-r from-primary to-secondary absolute left-0 top-0 shadow-[0_0_20px_rgba(239,26,184,0.5)]"></div>
                   </div>
                   <div className="flex flex-col sm:flex-row justify-between items-center gap-3">
-                    <p className="text-xs text-muted-foreground">Budget Limit: ₦<span className="text-foreground font-bold">{profile?.monthlyBudget?.toLocaleString() || '0'}</span></p>
+                    <p className="text-xs text-muted-foreground">Monthly Budget: ₦<span className="text-foreground font-bold">{profile?.monthlyBudget?.toLocaleString() || '0'}</span></p>
                     <Badge className="bg-emerald-500/20 text-emerald-500 border-none px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">Active Wallet</Badge>
                   </div>
                 </div>
@@ -130,11 +123,11 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   <div className="space-y-3">
-                    <Progress value={Math.min((todaySpending / 500) * 100, 100)} className="h-2 bg-white/5 [&>div]:bg-primary" />
+                    <Progress value={Math.min((todaySpending / 1000) * 100, 100)} className="h-2 bg-white/5 [&>div]:bg-primary" />
                     <div className="flex justify-between items-center">
-                      <p className="text-[10px] text-muted-foreground">Daily Limit Estimate: ₦500</p>
-                      <Badge className={cn("border-none text-[8px] font-bold uppercase tracking-widest px-2 py-0.5", todaySpending > 500 ? "bg-rose-500/10 text-rose-400" : "bg-emerald-500/10 text-emerald-400")}>
-                        {todaySpending > 500 ? "Over Limit" : "Healthy"}
+                      <p className="text-[10px] text-muted-foreground">Daily Limit (Est): ₦1,000</p>
+                      <Badge className={cn("border-none text-[8px] font-bold uppercase tracking-widest px-2 py-0.5", todaySpending > 1000 ? "bg-rose-500/10 text-rose-400" : "bg-emerald-500/10 text-emerald-400")}>
+                        {todaySpending > 1000 ? "Limit Exceeded" : "Healthy"}
                       </Badge>
                     </div>
                   </div>
@@ -146,31 +139,27 @@ export default function DashboardPage() {
                     {orders?.length || 0}
                   </h3>
                   <div className="flex items-center gap-1 text-[8px] text-muted-foreground font-bold uppercase">
-                    <TrendingUp className="w-3 h-3 text-muted-foreground" /> Orders recorded in database
+                    <TrendingUp className="w-3 h-3 text-muted-foreground" /> Recorded Transactions
                   </div>
                 </GlassCard>
               </div>
             </div>
 
-            {/* Recent History */}
             <GlassCard className="p-6 md:p-8 border-white/5">
                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
                  <h3 className="text-xl font-headline font-bold">Recent History</h3>
                  <Link href="/calendar">
-                   <Button variant="ghost" size="sm" className="text-primary text-[10px] font-bold uppercase tracking-widest hover:bg-primary/10">View Detailed Report</Button>
+                   <Button variant="ghost" size="sm" className="text-primary text-[10px] font-bold uppercase hover:bg-primary/10">Full Report</Button>
                  </Link>
                </div>
-
                <div className="space-y-4">
                   {expenses?.slice(0, 5).map((exp, i) => (
                     <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-primary/20 transition-all">
                        <div className="flex items-center gap-4">
-                          <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                             <CreditCard className="w-4 h-4" />
-                          </div>
+                          <div className="p-2 rounded-lg bg-primary/10 text-primary"><CreditCard className="w-4 h-4" /></div>
                           <div>
                              <p className="text-sm font-bold">{exp.description}</p>
-                             <p className="text-[10px] text-muted-foreground uppercase font-medium">{new Date(exp.expenseDate).toLocaleDateString()}</p>
+                             <p className="text-[10px] text-muted-foreground uppercase">{new Date(exp.expenseDate).toLocaleDateString()}</p>
                           </div>
                        </div>
                        <p className="text-sm font-bold text-white">₦{exp.amount.toLocaleString()}</p>
@@ -184,63 +173,33 @@ export default function DashboardPage() {
                   )}
                </div>
             </GlassCard>
-
           </div>
 
-          {/* Right Sidebar Marketplace (4 cols) */}
           <div className="lg:col-span-4 space-y-8 order-1 lg:order-2">
             <GlassCard className="p-6 border-white/5 space-y-8">
-              
-              {/* Order Box */}
               <div className="space-y-4">
-                <h3 className="text-lg font-headline font-bold">Order from Vendors</h3>
+                <h3 className="text-lg font-headline font-bold">Marketplace</h3>
                 <div className="bg-primary/5 border border-dashed border-primary/20 rounded-2xl p-8 text-center space-y-4">
                   <Store className="w-8 h-8 text-primary mx-auto" />
-                  <p className="text-[10px] text-muted-foreground uppercase font-bold">Discover verified campus merchants</p>
+                  <p className="text-[10px] text-muted-foreground uppercase font-bold">Discover campus merchants</p>
                   <Link href="/vendors" className="block">
-                    <Button size="sm" className="w-full bg-primary/20 text-primary hover:bg-primary/30 border border-primary/40 text-[10px] font-bold uppercase">Explore Marketplace</Button>
+                    <Button size="sm" className="w-full bg-primary/20 text-primary border border-primary/40 text-[10px] font-bold uppercase">Explore Vendors</Button>
                   </Link>
                 </div>
               </div>
-
-              {/* Quick Tray Access */}
               <div className="space-y-4">
-                <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Quick Tray Access</h4>
+                <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Quick Tray</h4>
                 <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2">
                   <p className="text-[10px] text-primary font-bold uppercase tracking-widest">Digital Wallet Ready</p>
-                  <p className="text-[10px] text-muted-foreground leading-relaxed">Your wallet is synced. Items added to your tray will be calculated using your Naira balance.</p>
+                  <p className="text-[10px] text-muted-foreground leading-relaxed">Naira balance automatically calculated.</p>
                   <Link href="/cart" className="block pt-2">
-                    <Button variant="outline" size="sm" className="w-full h-8 text-[8px] font-bold uppercase tracking-widest border-white/10">View My Tray <ShoppingCart className="ml-2 w-3 h-3" /></Button>
+                    <Button variant="outline" size="sm" className="w-full h-8 text-[8px] font-bold uppercase border-white/10">View My Tray <ShoppingCart className="ml-2 w-3 h-3" /></Button>
                   </Link>
                 </div>
               </div>
-
-              {/* Bottom Quick Stats */}
-              <div className="grid grid-cols-2 gap-4 pt-6 border-t border-white/5">
-                <div className="space-y-1 group cursor-default">
-                  <div className="flex items-center gap-2 text-primary group-hover:neon-text-glow transition-all">
-                    <Store className="w-4 h-4" /> <span className="text-xl font-headline font-bold">Live</span>
-                  </div>
-                  <p className="text-[8px] text-muted-foreground uppercase font-bold tracking-widest">Ecosystem</p>
-                </div>
-                <div className="space-y-1 group cursor-default">
-                  <div className="flex items-center gap-2 text-primary group-hover:neon-text-glow transition-all">
-                    <Zap className="w-4 h-4" /> <span className="text-xl font-headline font-bold">100%</span>
-                  </div>
-                  <p className="text-[8px] text-muted-foreground uppercase font-bold tracking-widest">Verified</p>
-                </div>
-              </div>
-
             </GlassCard>
           </div>
-
         </div>
-
-        {/* Footer */}
-        <div className="pt-12 pb-24 md:pb-8 text-center border-t border-white/5">
-           <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-[0.3em]">© 2024 CampusSpend • Future of Student Finance</p>
-        </div>
-
       </div>
     </DashboardShell>
   )

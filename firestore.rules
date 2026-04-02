@@ -1,6 +1,8 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Development Mode: Full open access to resolve connection issues.
+    // Ensure you move to explicit rules before going live.
     match /{document=**} {
       allow read, write: if true;
     }

@@ -4,16 +4,15 @@ import * as React from "react"
 import { VendorShell } from "@/components/layout/VendorShell"
 import { GlassCard } from "@/components/ui/glass-card"
 import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { 
-  TrendingUp, 
   ShoppingBag, 
   Box, 
   Plus, 
-  ChevronRight, 
   Loader2,
-  DollarSign
+  DollarSign,
+  TrendingUp,
+  Clock,
+  CheckCircle2
 } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
@@ -21,29 +20,38 @@ import { collection, query, where, collectionGroup } from 'firebase/firestore'
 import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase'
 
 export default function VendorDashboardPage() {
-  const { user, profile } = useUser()
+  const { user, profile, isProfileLoading } = useUser()
   const db = useFirestore()
 
-  // Fetch real products count
-  const productsQuery = useMemoFirebase(() => {
-    if (!user) return null
-    return query(collection(db, "products"), where("vendorOwnerId", "==", user.uid))
-  }, [db, user])
-  const { data: products, isLoading: productsLoading } = useCollection(productsQuery)
+  // Guard: Wait for Auth and Profile
+  if (isProfileLoading || !user) {
+    return (
+      <VendorShell>
+        <div className="flex items-center justify-center h-[60vh]">
+          <Loader2 className="w-12 h-12 text-primary animate-spin" />
+        </div>
+      </VendorShell>
+    )
+  }
 
-  // Fetch real order items for stats - REQUIRED: Filtered by vendorOwnerId to match security rules
+  const productsQuery = useMemoFirebase(() => {
+    return query(collection(db, "products"), where("vendorOwnerId", "==", user.uid))
+  }, [db, user.uid])
+  const { data: products } = useCollection(productsQuery)
+
   const itemsQuery = useMemoFirebase(() => {
-    if (!user) return null
     return query(
       collectionGroup(db, "orderItems"), 
       where("vendorOwnerId", "==", user.uid)
     )
-  }, [db, user])
-  const { data: orderItems, isLoading: itemsLoading } = useCollection(itemsQuery)
+  }, [db, user.uid])
+  const { data: orderItems } = useCollection(itemsQuery)
 
   const totalSales = React.useMemo(() => {
     return orderItems?.reduce((sum, item) => sum + item.subtotal, 0) || 0
   }, [orderItems])
+
+  const pendingCount = orderItems?.filter(i => !i.status || i.status === 'placed').length || 0
 
   return (
     <VendorShell>
@@ -53,7 +61,7 @@ export default function VendorDashboardPage() {
             <h1 className="text-4xl font-headline font-bold text-white">
               Welcome back, <span className="text-primary neon-text-glow">{profile?.name || 'Vendor'}!</span>
             </h1>
-            <p className="text-muted-foreground text-sm">Here's your sales overview and recent activity.</p>
+            <p className="text-muted-foreground text-sm">Managing your campus shop performance.</p>
           </div>
           <Link href="/vendor/add-product">
             <Button className="glow-button rounded-2xl h-12 bg-primary px-8 group">
@@ -64,53 +72,44 @@ export default function VendorDashboardPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           <div className="lg:col-span-12 space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <GlassCard className="p-6 border-white/5 hover:border-primary/20 transition-all bg-gradient-to-br from-emerald-500/5 to-transparent">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <GlassCard className="p-6 border-white/5 bg-gradient-to-br from-emerald-500/5 to-transparent">
                 <div className="flex justify-between items-start mb-4">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Total Revenue</p>
-                  <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
-                    <DollarSign className="w-4 h-4" />
-                  </div>
+                  <DollarSign className="w-4 h-4 text-emerald-400" />
                 </div>
-                <div className="space-y-1">
-                  <h3 className="text-2xl font-bold text-white">₦{totalSales.toLocaleString()}</h3>
-                  <p className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest">Digital Earnings</p>
-                </div>
+                <h3 className="text-2xl font-bold text-white">₦{totalSales.toLocaleString()}</h3>
               </GlassCard>
 
-              <GlassCard className="p-6 border-white/5 hover:border-primary/20 transition-all">
+              <GlassCard className="p-6 border-white/5">
                 <div className="flex justify-between items-start mb-4">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Items Sold</p>
-                  <div className="p-2 rounded-lg bg-white/5 text-secondary">
-                    <ShoppingBag className="w-4 h-4" />
-                  </div>
+                  <ShoppingBag className="w-4 h-4 text-secondary" />
                 </div>
-                <div className="space-y-1">
-                  <h3 className="text-2xl font-bold text-white">{orderItems?.length || 0}</h3>
-                  <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Total Orders</p>
-                </div>
+                <h3 className="text-2xl font-bold text-white">{orderItems?.length || 0}</h3>
               </GlassCard>
 
-              <GlassCard className="p-6 border-white/5 hover:border-primary/20 transition-all">
+              <GlassCard className="p-6 border-white/5 border-primary/20">
+                <div className="flex justify-between items-start mb-4">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-primary">Pending Orders</p>
+                  <Clock className="w-4 h-4 text-primary" />
+                </div>
+                <h3 className="text-2xl font-bold text-white">{pendingCount}</h3>
+              </GlassCard>
+
+              <GlassCard className="p-6 border-white/5">
                 <div className="flex justify-between items-start mb-4">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Inventory</p>
-                  <div className="p-2 rounded-lg bg-white/5 text-blue-400">
-                    <Box className="w-4 h-4" />
-                  </div>
+                  <Box className="w-4 h-4 text-blue-400" />
                 </div>
-                <div className="space-y-1">
-                  <h3 className="text-2xl font-bold text-white">
-                    {productsLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : products?.length || 0}
-                  </h3>
-                  <p className="text-[10px] text-blue-400 font-bold uppercase tracking-widest">Active Products</p>
-                </div>
+                <h3 className="text-2xl font-bold text-white">{products?.length || 0}</h3>
               </GlassCard>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <GlassCard className="p-8 border-white/5 bg-white/5">
                 <div className="flex items-center justify-between mb-8">
-                  <h3 className="text-xl font-headline font-bold">Recent Sales</h3>
+                  <h3 className="text-xl font-headline font-bold">Recent Activity</h3>
                   <Link href="/vendor/orders">
                     <Button variant="link" className="text-primary text-[10px] font-bold uppercase tracking-widest p-0">View All</Button>
                   </Link>
@@ -124,7 +123,7 @@ export default function VendorDashboardPage() {
                         </div>
                         <div>
                           <p className="text-sm font-bold">{item.name}</p>
-                          <p className="text-[10px] text-muted-foreground uppercase font-medium">Qty: {item.quantity}</p>
+                          <p className="text-[10px] text-muted-foreground uppercase font-medium">Status: {item.status || 'placed'}</p>
                         </div>
                       </div>
                       <p className="text-sm font-bold text-white">₦{item.subtotal.toLocaleString()}</p>
