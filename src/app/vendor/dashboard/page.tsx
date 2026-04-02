@@ -12,7 +12,7 @@ import {
   DollarSign,
   TrendingUp,
   Clock,
-  CheckCircle2
+  AlertTriangle
 } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
@@ -23,14 +23,14 @@ export default function VendorDashboardPage() {
   const { user, profile, isProfileLoading } = useUser()
   const db = useFirestore()
 
-  // 1. Define all hooks first (never after an early return)
+  // 1. Define all hooks first
   const productsQuery = useMemoFirebase(() => {
-    if (!user) return null
+    if (!user?.uid) return null
     return query(collection(db, "products"), where("vendorOwnerId", "==", user.uid))
   }, [db, user?.uid])
 
   const itemsQuery = useMemoFirebase(() => {
-    if (!user) return null
+    if (!user?.uid) return null
     return query(
       collectionGroup(db, "orderItems"), 
       where("vendorOwnerId", "==", user.uid)
@@ -38,7 +38,7 @@ export default function VendorDashboardPage() {
   }, [db, user?.uid])
 
   const { data: products, isLoading: productsLoading } = useCollection(productsQuery)
-  const { data: orderItems, isLoading: itemsLoading } = useCollection(itemsQuery)
+  const { data: orderItems, isLoading: itemsLoading, error: queryError } = useCollection(itemsQuery)
 
   // 2. Derive derived data
   const totalSales = React.useMemo(() => {
@@ -47,12 +47,39 @@ export default function VendorDashboardPage() {
 
   const pendingCount = orderItems?.filter(i => !i.status || i.status === 'placed' || i.status === 'preparing').length || 0
 
-  // 3. Early return for UI state (loading/auth) after hooks are registered
+  // 3. Early return for UI state
   if (isProfileLoading || !user) {
     return (
       <VendorShell>
         <div className="flex items-center justify-center h-[60vh]">
           <Loader2 className="w-12 h-12 text-primary animate-spin" />
+        </div>
+      </VendorShell>
+    )
+  }
+
+  // Handle Missing Index Error
+  if (queryError?.message?.includes('requires an index')) {
+    return (
+      <VendorShell>
+        <div className="flex flex-col items-center justify-center h-[60vh] space-y-6 text-center max-w-md mx-auto">
+          <div className="w-20 h-20 rounded-full bg-amber-500/10 flex items-center justify-center border border-amber-500/20">
+            <AlertTriangle className="w-10 h-10 text-amber-500" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-headline font-bold text-white">Database Index Required</h2>
+            <p className="text-muted-foreground text-sm leading-relaxed">
+              Firestore needs a collection group index to display your sales. This is a one-time setup.
+            </p>
+          </div>
+          <Button asChild className="bg-amber-500 hover:bg-amber-600 text-black font-bold h-12 px-8 rounded-xl">
+            <a href="https://console.firebase.google.com/v1/r/project/campusspend-733ab/firestore/indexes?create_exemption=Cl9wcm9qZWN0cy9jYW1wdXNzcGVuZC03MzNhYi9kYXRhYmFzZXMvKGRlZmF1bHQpL2NvbGxlY3Rpb25Hcm91cHMvb3JkZXJJdGVtcy9maWVsZHMvdmVuZG9yT3duZXJJZBACGhEKDXZlbmRvck93bmVySWQQAQ" target="_blank" rel="noopener noreferrer">
+              Create Index in Firebase Console
+            </a>
+          </Button>
+          <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">
+            Wait ~3 mins after clicking before refreshing
+          </p>
         </div>
       </VendorShell>
     )

@@ -47,7 +47,12 @@ export function useCollection<T = any>(
         setIsLoading(false);
       },
       (err) => {
-        console.error("Firestore useCollection Error:", err);
+        // Specifically identify index errors for the user
+        if (err.code === 'failed-precondition' || err.message.includes('requires an index')) {
+          console.error("❌ Firestore Index Missing:", err.message);
+        } else {
+          console.error("Firestore useCollection Error:", err);
+        }
         setError(err);
         setIsLoading(false);
       }
